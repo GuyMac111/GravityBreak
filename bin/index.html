@@ -1,0 +1,24 @@
+<!DOCTYPE <!DOCTYPE html>
+<html>
+<head>
+    <title>Gravity Break</title>
+    <!-- do we even need this -->
+    <!-- <script src="../node_modules/typescript-collections/dist/lib/umd.min.js"></script> -->
+    <script src="js/phaser.js"></script>
+    <script data-main="js/main.js" src="../node_modules/requirejs/require.js"></script>
+    <script>
+        require(["GravityBreak"], function(GravityBreak){
+            var game = new GravityBreak();
+            console.log("WE GET HERE IN INDEX");
+        });
+    </script>
+    <!-- <script data-main="js/gravityBreak" src="../node_modules/requirejs/require.js"></script> -->
+    <!-- <script src="../node_modules/requirejs/require.js"></script> -->
+    <!-- NOTE: js/gravityBreak.js Doesn't exist before transpilation -->
+    <!-- <script src="js/gravityBreak.js"></script> -->
+</head>
+<body>
+    <h1>Gravity Break</h1>
+    <div id="content"></div>
+</body>
+</html>
