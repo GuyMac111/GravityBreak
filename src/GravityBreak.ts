@@ -1,4 +1,4 @@
-import Collections = require('typescript-collections');
+import {Dictionary} from "typescript-collections";
 
 class GravityBreakGame
 {
@@ -33,7 +33,7 @@ class GravityBreakGame
 		let diamond = this.game.add.sprite( this.game.world.centerX, this.game.world.centerY,'diamonds',1);
 		diamond.anchor.setTo( 0.5, 0.5 );
 		
-		let dict = new Collections.Dictionary<number, GridModel>();
+		let dict = new Dictionary<number, GridModel>();
 		for(let i = 0; i<10;i++){
 			let gridModel: GridModel =  new GridModel(i);
 			dict.setValue(i,gridModel);

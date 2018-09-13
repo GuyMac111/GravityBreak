@@ -3,12 +3,11 @@
 <head>
     <title>Gravity Break</title>
     <!-- do we even need this -->
-    <!-- <script src="../node_modules/typescript-collections/dist/lib/umd.min.js"></script> -->
     <script src="js/phaser.js"></script>
     <script data-main="js/main.js" src="../node_modules/requirejs/require.js"></script>
     <script>
-        require(["GravityBreak"], function(GravityBreak){
-            var game = new GravityBreak();
+        require(["GravityBreak"], function(GravityBreakGame){
+            var game = new GravityBreakGame();
             console.log("WE GET HERE IN INDEX");
         });
     </script>
