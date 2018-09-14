@@ -1,11 +1,9 @@
-import {Dictionary} from "typescript-collections";
+import { GridController } from "./Grid/GridController";
 
-class GravityBreakGame
-{
+class GravityBreakGame{
 	game:Phaser.Game;
 	
-	constructor()
-	{
+	constructor(){
 		// create our phaser game
 		// 800 - width
 		// 600 - height
@@ -15,8 +13,7 @@ class GravityBreakGame
 		this.game = new Phaser.Game( 800, 600, Phaser.AUTO, 'content', { preload:this.preload, create:this.create} );
 	}
 	
-	preload()
-	{
+	preload(){
 		// add our logo image to the assets class under the
 		// key 'logo'. We're also setting the background colour
 		// so it's the same as the background colour in the image
@@ -24,8 +21,7 @@ class GravityBreakGame
 		this.game.stage.backgroundColor = 0xB20059;
 	}
 	
-	create()
-	{
+	create(){
 		// add the 'logo' sprite to the game, position it in the
 		// center of the screen, and set the anchor to the center of
 		// the image so it's centered properly. There's a lot of
@@ -33,31 +29,11 @@ class GravityBreakGame
 		let diamond = this.game.add.sprite( this.game.world.centerX, this.game.world.centerY,'diamonds',1);
 		diamond.anchor.setTo( 0.5, 0.5 );
 		
-		let dict = new Dictionary<number, GridModel>();
-		for(let i = 0; i<10;i++){
-			let gridModel: GridModel =  new GridModel(i);
-			dict.setValue(i,gridModel);
-		}
-		
-		for(let i = 0; i<10; i++){
-			if(dict.containsKey(i)){
-				console.log("GUY::: Found dict element "+i);
-			}
-		}
+		let gridController: GridController = new GridController(10,10); 
 	}
 }
 
-// when the page has finished loading, create our game
-function Initialise(){
-	var game = new GravityBreakGame()
-}
-
 export = GravityBreakGame;
-// var game = new GravityBreakGame()
-
-// window.onload = () => {
-// 	var game = new GravityBreakGame();
-// }
 
 
 

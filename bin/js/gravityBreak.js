@@ -1,4 +1,38 @@
-define("GravityBreak", ["require", "exports", "typescript-collections"], function (require, exports, typescript_collections_1) {
+define("Grid/GridNode", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GridNode {
+        constructor(gridCoordinate) {
+            this._gridCoordinate = new Phaser.Point(gridCoordinate.x, gridCoordinate.y);
+        }
+        get gridCoordinate() {
+            return this._gridCoordinate;
+        }
+    }
+    exports.GridNode = GridNode;
+});
+define("Grid/GridController", ["require", "exports", "typescript-collections", "Grid/GridNode"], function (require, exports, typescript_collections_1, GridNode_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GridController {
+        constructor(nodesHigh, nodesWide) {
+            this._dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
+            this._gridNodes = new typescript_collections_1.Dictionary();
+            this.initialise();
+        }
+        initialise() {
+            for (let i = 0; i < this._dimensionsInNodes.x; i++) {
+                for (let j = 0; j < this._dimensionsInNodes.y; j++) {
+                    let node = new GridNode_1.GridNode(new Phaser.Point(i, j));
+                    this._gridNodes.setValue(node.gridCoordinate, node);
+                    console.log("GridController::: Created node with point ${node.gridCoordinate.x},${node.gridCoordinate.y}");
+                }
+            }
+        }
+    }
+    exports.GridController = GridController;
+});
+define("GravityBreak", ["require", "exports", "Grid/GridController"], function (require, exports, GridController_1) {
     "use strict";
     class GravityBreakGame {
         constructor() {
@@ -24,28 +58,11 @@ define("GravityBreak", ["require", "exports", "typescript-collections"], functio
             // centering in that last sentence
             let diamond = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, 'diamonds', 1);
             diamond.anchor.setTo(0.5, 0.5);
-            let dict = new typescript_collections_1.Dictionary();
-            for (let i = 0; i < 10; i++) {
-                let gridModel = new GridModel(i);
-                dict.setValue(i, gridModel);
-            }
-            for (let i = 0; i < 10; i++) {
-                if (dict.containsKey(i)) {
-                    console.log("GUY::: Found dict element " + i);
-                }
-            }
+            let gridController = new GridController_1.GridController(10, 10);
         }
-    }
-    // when the page has finished loading, create our game
-    function Initialise() {
-        var game = new GravityBreakGame();
     }
     return GravityBreakGame;
 });
-// var game = new GravityBreakGame()
-// window.onload = () => {
-// 	var game = new GravityBreakGame();
-// }
 class GridModel {
     constructor(index) {
         this._index = index;

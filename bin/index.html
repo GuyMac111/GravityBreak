@@ -7,14 +7,15 @@
     <script data-main="js/main.js" src="../node_modules/requirejs/require.js"></script>
     <script>
         require(["GravityBreak"], function(GravityBreakGame){
-            var game = new GravityBreakGame();
-            console.log("WE GET HERE IN INDEX");
+            function onWindowLoad(){
+                console.log("Index::: Window loaded")
+                new GravityBreakGame();
+            }
+            window.onload = onWindowLoad;
+            // new GravityBreakGame();
+            console.log("Index::: Rest of Index occurs now");
         });
     </script>
-    <!-- <script data-main="js/gravityBreak" src="../node_modules/requirejs/require.js"></script> -->
-    <!-- <script src="../node_modules/requirejs/require.js"></script> -->
-    <!-- NOTE: js/gravityBreak.js Doesn't exist before transpilation -->
-    <!-- <script src="js/gravityBreak.js"></script> -->
 </head>
 <body>
     <h1>Gravity Break</h1>
