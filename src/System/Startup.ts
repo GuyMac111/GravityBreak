@@ -42,7 +42,4 @@ export class Startup{
         this._systemModel.setBlockFactory(blockFactory);
     }
 
-
-
-
 }
