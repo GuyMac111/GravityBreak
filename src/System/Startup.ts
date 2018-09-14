@@ -4,10 +4,10 @@ import { ISystemModel } from "./ISystemModel";
 import { GridController } from "../Grid/GridController";
 
 export class Startup{
-    _game: Phaser.Game;
+    private _game: Phaser.Game;
     ////
     //hmmmmm: Does this need to exist?
-    _systemModel: SystemModel;
+    private _systemModel: SystemModel;
     ////
 
     ///Perhaps we should separate Startup into 1: Bootstrap and 2: Initialise
@@ -33,6 +33,7 @@ export class Startup{
 
     private initialiseGrid(){
         let gridController: GridController = new GridController(10,10);
+        //YOU LEFT OFF: You were about to refactor GridController into Grid and GridFactory;
     }
 
     private bootstrapBlockFactory(){
