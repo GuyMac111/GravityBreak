@@ -16,7 +16,7 @@ export class GridController{
             for(let j = 0; j<this._dimensionsInNodes.y; j++){
                 let node = new GridNode(new Phaser.Point(i,j));
                 this._gridNodes.setValue(node.gridCoordinate, node);
-                console.log("GridController::: Created node with point ${node.gridCoordinate.x},${node.gridCoordinate.y}");
+                console.log(`GridController::: Created node with point ${node.gridCoordinate.x},${node.gridCoordinate.y}`);
             }
         }
     }
