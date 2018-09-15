@@ -19,6 +19,7 @@ export class Startup{
     }
     
     initialiseGame(){
+        this._systemModel = new SystemModel();
         this.bootstrapGame();
         this.initialiseGrid();
     }
