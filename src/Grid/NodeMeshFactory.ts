@@ -1,18 +1,21 @@
 import { GridNode } from "./GridNode";
 import { Dictionary } from "typescript-collections";
+import { NodeMesh } from "./NodeMesh";
 
 export class NodeMeshFactory{
     //Unfortunately have to keep a reference to the Dictionary here
     //Wanted to keep this stateless, but can't think of a way to associate the nodes without a ref
     //...Failure
-    private _nodeMesh:Dictionary<Phaser.Point, GridNode>;
+    private _nodeMesh: Dictionary<Phaser.Point, GridNode>;
+    private _spawnNodeMesh: Dictionary<Phaser.Point, GridNode>; 
     private _dimensionsInNodes: Phaser.Point;
 
-    createNodeMeshOfDimensions(dimensionsInNodes: Phaser.Point): Dictionary<Phaser.Point, GridNode>{
+    createNodeMesh(dimensionsInNodes: Phaser.Point): NodeMesh{
         this._dimensionsInNodes = dimensionsInNodes;
         this._nodeMesh = this.createUnassociatedNodeMesh(this._dimensionsInNodes);
+        this._spawnNodeMesh = new Dictionary<Phaser.Point, GridNode>();
         this.associateNodeMesh(this._nodeMesh);
-        return this._nodeMesh;
+        return new NodeMesh(this._nodeMesh, this._spawnNodeMesh, this._dimensionsInNodes);
     }
 
     private createUnassociatedNodeMesh(_dimensionsInNodes: Phaser.Point): Dictionary<Phaser.Point, GridNode> {
@@ -46,7 +49,9 @@ export class NodeMeshFactory{
             nodeToAssociate.nodeAbove = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x,nodeToAssociate.gridCoordinate.y-1));
             console.log(`NodeMeshFactory::: The node above node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeAbove.gridCoordinate}`);
         }else{
-            console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is at the top. So no above node associated`);
+            console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is at the top. Creating spawn node above.`);
+            let spawnNodeLocation: Phaser.Point = new Phaser.Point(nodeToAssociate.gridCoordinate.x ,-1);
+            this.createSecretSpawnNode(spawnNodeLocation);
         }
     }
 
@@ -56,7 +61,9 @@ export class NodeMeshFactory{
             nodeToAssociate.nodeBelow = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x,nodeToAssociate.gridCoordinate.y+1));
             console.log(`NodeMeshFactory::: The node below node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeBelow.gridCoordinate}`);
         }else{
-            console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is at the bottom. So no below node associated`);
+            console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is at the bottom. Creating spawn node below.`);
+            let spawnNodeLocation: Phaser.Point = new Phaser.Point(nodeToAssociate.gridCoordinate.x ,this._dimensionsInNodes.y);
+            this.createSecretSpawnNode(spawnNodeLocation);
         }
     }
 
@@ -66,7 +73,9 @@ export class NodeMeshFactory{
             nodeToAssociate.nodeLeft = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x-1,nodeToAssociate.gridCoordinate.y));
             console.log(`NodeMeshFactory::: The node to the left of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeLeft.gridCoordinate}`);
         }else{
-            console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the left. So no node associated`);
+            console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the left. Creating spawn node left.`);
+            let spawnNodeLocation: Phaser.Point = new Phaser.Point(-1 ,nodeToAssociate.gridCoordinate.y);
+            this.createSecretSpawnNode(spawnNodeLocation);
         }
     }
 
@@ -76,8 +85,15 @@ export class NodeMeshFactory{
             nodeToAssociate.nodeAbove = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x+1,nodeToAssociate.gridCoordinate.y));
             console.log(`NodeMeshFactory::: The node to the right of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeAbove.gridCoordinate}`);
         }else{
-            console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the right. So no node associated`);
+            console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the left. Creating spawn node left.`);
+            let spawnNodeLocation: Phaser.Point = new Phaser.Point(this._dimensionsInNodes.x ,nodeToAssociate.gridCoordinate.y);
+            this.createSecretSpawnNode(spawnNodeLocation);
+
         }
     }
+
+    private createSecretSpawnNode(nodeLocation: Phaser.Point): void{
+        this._spawnNodeMesh.setValue(nodeLocation, new GridNode(nodeLocation));
+    } 
 
 }

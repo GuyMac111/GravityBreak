@@ -1,5 +1,9 @@
+import { BlockMediator } from "../Block/BlockMediator";
+
 export class GridNode{
     private _gridCoordinate: Phaser.Point;
+
+    currentBlock: BlockMediator;
     nodeAbove: GridNode;
     nodeBelow: GridNode;
     nodeLeft: GridNode;
@@ -11,5 +15,9 @@ export class GridNode{
 
     get gridCoordinate(): Phaser.Point{
         return this._gridCoordinate;
+    }
+
+    get isOccupied(): boolean{
+        return this.currentBlock != undefined;
     }
 }

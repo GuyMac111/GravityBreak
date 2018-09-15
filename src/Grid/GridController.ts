@@ -1,16 +1,17 @@
-import { Dictionary } from "typescript-collections";
-import { GridNode } from "./GridNode";
 import { NodeMeshFactory } from "./NodeMeshFactory";
+import { NodeMesh } from "./NodeMesh";
 
 export class GridController{
-    private _dimensionsInNodes: Phaser.Point; 
-    private _gridNodes: Dictionary<Phaser.Point, GridNode>;
+    private _gridNodes: NodeMesh;
     
     constructor(nodesHigh:number, nodesWide:number){
+        //Given more time, the NodeMesh would be an object, instantiated & injected via a factory defined within the context.
         let factory: NodeMeshFactory = new NodeMeshFactory();
-        this._dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
-        this._gridNodes = factory.createNodeMeshOfDimensions(this._dimensionsInNodes);
+        let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
+        this._gridNodes = factory.createNodeMesh(dimensionsInNodes);
     }
+
+    //TODO: using strategy provider we should now attempt filling the grid.
 
     
 }

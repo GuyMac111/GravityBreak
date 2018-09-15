@@ -1,103 +1,3 @@
-define("Grid/GridNode", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class GridNode {
-        constructor(gridCoordinate) {
-            this._gridCoordinate = new Phaser.Point(gridCoordinate.x, gridCoordinate.y);
-        }
-        get gridCoordinate() {
-            return this._gridCoordinate;
-        }
-    }
-    exports.GridNode = GridNode;
-});
-define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescript-collections"], function (require, exports, GridNode_1, typescript_collections_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class NodeMeshFactory {
-        createNodeMeshOfDimensions(dimensionsInNodes) {
-            this._dimensionsInNodes = dimensionsInNodes;
-            this._nodeMesh = this.createUnassociatedNodeMesh(this._dimensionsInNodes);
-            this.associateNodeMesh(this._nodeMesh);
-            return this._nodeMesh;
-        }
-        createUnassociatedNodeMesh(_dimensionsInNodes) {
-            let nodeMesh = new typescript_collections_1.Dictionary();
-            for (let i = 0; i < _dimensionsInNodes.x; i++) {
-                for (let j = 0; j < _dimensionsInNodes.y; j++) {
-                    let node = new GridNode_1.GridNode(new Phaser.Point(i, j));
-                    nodeMesh.setValue(node.gridCoordinate, node);
-                    console.log(`NodeMeshFactory::: Created node with grid location ${node.gridCoordinate.x},${node.gridCoordinate.y}`);
-                }
-            }
-            return nodeMesh;
-        }
-        associateNodeMesh(unassociatedNodeMesh) {
-            //Loop through and link all of the created nodes to eachother
-            unassociatedNodeMesh.forEach(this.associateNode.bind(this));
-        }
-        associateNode(gridCoordinate, nodeToAssociate) {
-            console.log(`NodeMeshFactory::: Associating node at ${nodeToAssociate.gridCoordinate}`);
-            this.associateAbove(nodeToAssociate);
-            this.associateBelow(nodeToAssociate);
-            this.associateLeft(nodeToAssociate);
-            this.associateRight(nodeToAssociate);
-        }
-        associateAbove(nodeToAssociate) {
-            if (nodeToAssociate.gridCoordinate.y > 0) {
-                //If it's not in the top row
-                nodeToAssociate.nodeAbove = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x, nodeToAssociate.gridCoordinate.y - 1));
-                console.log(`NodeMeshFactory::: The node above node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeAbove.gridCoordinate}`);
-            }
-            else {
-                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is at the top. So no above node associated`);
-            }
-        }
-        associateBelow(nodeToAssociate) {
-            if (nodeToAssociate.gridCoordinate.y < this._dimensionsInNodes.y - 1) {
-                //If it's not in the bottom row
-                nodeToAssociate.nodeBelow = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x, nodeToAssociate.gridCoordinate.y + 1));
-                console.log(`NodeMeshFactory::: The node below node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeBelow.gridCoordinate}`);
-            }
-            else {
-                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is at the bottom. So no below node associated`);
-            }
-        }
-        associateLeft(nodeToAssociate) {
-            if (nodeToAssociate.gridCoordinate.x > 0) {
-                //If it's not in the left-most row
-                nodeToAssociate.nodeLeft = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x - 1, nodeToAssociate.gridCoordinate.y));
-                console.log(`NodeMeshFactory::: The node to the left of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeLeft.gridCoordinate}`);
-            }
-            else {
-                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the left. So no node associated`);
-            }
-        }
-        associateRight(nodeToAssociate) {
-            if (nodeToAssociate.gridCoordinate.x < this._dimensionsInNodes.x - 1) {
-                //If it's not in the right-most row
-                nodeToAssociate.nodeAbove = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x + 1, nodeToAssociate.gridCoordinate.y));
-                console.log(`NodeMeshFactory::: The node to the right of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeAbove.gridCoordinate}`);
-            }
-            else {
-                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the right. So no node associated`);
-            }
-        }
-    }
-    exports.NodeMeshFactory = NodeMeshFactory;
-});
-define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory"], function (require, exports, NodeMeshFactory_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class GridController {
-        constructor(nodesHigh, nodesWide) {
-            let factory = new NodeMeshFactory_1.NodeMeshFactory();
-            this._dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
-            this._gridNodes = factory.createNodeMeshOfDimensions(this._dimensionsInNodes);
-        }
-    }
-    exports.GridController = GridController;
-});
 define("System/View", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -143,6 +43,145 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator"], functio
         }
     }
     exports.BlockMediator = BlockMediator;
+});
+define("Grid/GridNode", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GridNode {
+        constructor(gridCoordinate) {
+            this._gridCoordinate = new Phaser.Point(gridCoordinate.x, gridCoordinate.y);
+        }
+        get gridCoordinate() {
+            return this._gridCoordinate;
+        }
+        get isOccupied() {
+            return this.currentBlock != undefined;
+        }
+    }
+    exports.GridNode = GridNode;
+});
+define("Grid/NodeMesh", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    //A class which contains all the associated nodes of a grid 
+    //as well as the hidden 'spawn nodes' of said grid in a separate dict
+    class NodeMesh {
+        constructor(nodes, spawnNodes, dimensionsInNodes) {
+            this._nodes = nodes;
+            this._spawnNodes = spawnNodes;
+            this._dimensionsInNodes = dimensionsInNodes;
+        }
+        get nodes() {
+            return this._nodes;
+        }
+        get spawnNodes() {
+            return this._spawnNodes;
+        }
+        get dimensionsInNodes() {
+            return this._dimensionsInNodes;
+        }
+    }
+    exports.NodeMesh = NodeMesh;
+});
+define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescript-collections", "Grid/NodeMesh"], function (require, exports, GridNode_1, typescript_collections_1, NodeMesh_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class NodeMeshFactory {
+        createNodeMesh(dimensionsInNodes) {
+            this._dimensionsInNodes = dimensionsInNodes;
+            this._nodeMesh = this.createUnassociatedNodeMesh(this._dimensionsInNodes);
+            this._spawnNodeMesh = new typescript_collections_1.Dictionary();
+            this.associateNodeMesh(this._nodeMesh);
+            return new NodeMesh_1.NodeMesh(this._nodeMesh, this._spawnNodeMesh, this._dimensionsInNodes);
+        }
+        createUnassociatedNodeMesh(_dimensionsInNodes) {
+            let nodeMesh = new typescript_collections_1.Dictionary();
+            for (let i = 0; i < _dimensionsInNodes.x; i++) {
+                for (let j = 0; j < _dimensionsInNodes.y; j++) {
+                    let node = new GridNode_1.GridNode(new Phaser.Point(i, j));
+                    nodeMesh.setValue(node.gridCoordinate, node);
+                    console.log(`NodeMeshFactory::: Created node with grid location ${node.gridCoordinate.x},${node.gridCoordinate.y}`);
+                }
+            }
+            return nodeMesh;
+        }
+        associateNodeMesh(unassociatedNodeMesh) {
+            //Loop through and link all of the created nodes to eachother
+            unassociatedNodeMesh.forEach(this.associateNode.bind(this));
+        }
+        associateNode(gridCoordinate, nodeToAssociate) {
+            console.log(`NodeMeshFactory::: Associating node at ${nodeToAssociate.gridCoordinate}`);
+            this.associateAbove(nodeToAssociate);
+            this.associateBelow(nodeToAssociate);
+            this.associateLeft(nodeToAssociate);
+            this.associateRight(nodeToAssociate);
+        }
+        associateAbove(nodeToAssociate) {
+            if (nodeToAssociate.gridCoordinate.y > 0) {
+                //If it's not in the top row
+                nodeToAssociate.nodeAbove = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x, nodeToAssociate.gridCoordinate.y - 1));
+                console.log(`NodeMeshFactory::: The node above node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeAbove.gridCoordinate}`);
+            }
+            else {
+                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is at the top. Creating spawn node above.`);
+                let spawnNodeLocation = new Phaser.Point(nodeToAssociate.gridCoordinate.x, -1);
+                this.createSecretSpawnNode(spawnNodeLocation);
+            }
+        }
+        associateBelow(nodeToAssociate) {
+            if (nodeToAssociate.gridCoordinate.y < this._dimensionsInNodes.y - 1) {
+                //If it's not in the bottom row
+                nodeToAssociate.nodeBelow = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x, nodeToAssociate.gridCoordinate.y + 1));
+                console.log(`NodeMeshFactory::: The node below node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeBelow.gridCoordinate}`);
+            }
+            else {
+                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is at the bottom. Creating spawn node below.`);
+                let spawnNodeLocation = new Phaser.Point(nodeToAssociate.gridCoordinate.x, this._dimensionsInNodes.y);
+                this.createSecretSpawnNode(spawnNodeLocation);
+            }
+        }
+        associateLeft(nodeToAssociate) {
+            if (nodeToAssociate.gridCoordinate.x > 0) {
+                //If it's not in the left-most row
+                nodeToAssociate.nodeLeft = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x - 1, nodeToAssociate.gridCoordinate.y));
+                console.log(`NodeMeshFactory::: The node to the left of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeLeft.gridCoordinate}`);
+            }
+            else {
+                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the left. Creating spawn node left.`);
+                let spawnNodeLocation = new Phaser.Point(-1, nodeToAssociate.gridCoordinate.y);
+                this.createSecretSpawnNode(spawnNodeLocation);
+            }
+        }
+        associateRight(nodeToAssociate) {
+            if (nodeToAssociate.gridCoordinate.x < this._dimensionsInNodes.x - 1) {
+                //If it's not in the right-most row
+                nodeToAssociate.nodeAbove = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x + 1, nodeToAssociate.gridCoordinate.y));
+                console.log(`NodeMeshFactory::: The node to the right of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeAbove.gridCoordinate}`);
+            }
+            else {
+                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the left. Creating spawn node left.`);
+                let spawnNodeLocation = new Phaser.Point(this._dimensionsInNodes.x, nodeToAssociate.gridCoordinate.y);
+                this.createSecretSpawnNode(spawnNodeLocation);
+            }
+        }
+        createSecretSpawnNode(nodeLocation) {
+            this._spawnNodeMesh.setValue(nodeLocation, new GridNode_1.GridNode(nodeLocation));
+        }
+    }
+    exports.NodeMeshFactory = NodeMeshFactory;
+});
+define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory"], function (require, exports, NodeMeshFactory_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GridController {
+        constructor(nodesHigh, nodesWide) {
+            //Given more time, the NodeMesh would be an object, instantiated & injected via a factory defined within the context.
+            let factory = new NodeMeshFactory_1.NodeMeshFactory();
+            let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
+            this._gridNodes = factory.createNodeMesh(dimensionsInNodes);
+        }
+    }
+    exports.GridController = GridController;
 });
 define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Block/BlockView"], function (require, exports, BlockMediator_1, BlockView_1) {
     "use strict";
@@ -237,5 +276,86 @@ define("GravityBreak", ["require", "exports", "System/Startup"], function (requi
         }
     }
     return GravityBreakGame;
+});
+define("Cascade/SpawnData", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class SpawnData {
+        constructor(spawnNode, destinationNode) {
+            this._destinationNode = destinationNode;
+            this._spawnNode = spawnNode;
+        }
+        get destination() {
+            return this._destinationNode;
+        }
+        get spawnNode() {
+            return this._spawnNode;
+        }
+    }
+    exports.SpawnData = SpawnData;
+});
+define("Cascade/ICascadeStrategy", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+});
+define("Cascade/CascadeStrategyProvider", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class CascadeStrategyProvider {
+        constructor(nodeMesh) {
+            this.initialiseStrategies(nodeMesh);
+        }
+        // get cascadeStrategy(): ICascadeStrategy{
+        // }
+        initialiseStrategies(nodeMesh) {
+            //TODO
+        }
+    }
+    exports.CascadeStrategyProvider = CascadeStrategyProvider;
+});
+define("Cascade/DownCascadeStrategy", ["require", "exports", "Cascade/SpawnData", "phaser"], function (require, exports, SpawnData_1, phaser_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class DownCascadeStrategy {
+        constructor(nodeMesh) {
+            this._nodeMesh = nodeMesh;
+        }
+        shouldSpawnBlock() {
+            return this.findNextUnoccupiedNode() != undefined;
+        }
+        getNextSpawn() {
+            let destinationNode = this.findNextUnoccupiedNode();
+            if (destinationNode == undefined) {
+                throw new Error(`Something went wrong. Searching the grid for next unoccupied node to spawn to, but we got undefined`);
+            }
+            let spawnNodeCoords = new Phaser.Point(destinationNode.gridCoordinate.x, -1);
+            //-1 because it's the invisible 'SpawnNode' at the top;
+            return new SpawnData_1.SpawnData(this._nodeMesh.spawnNodes.getValue(spawnNodeCoords), destinationNode);
+        }
+        findNextUnoccupiedNode() {
+            //this is naughty and unperformant, but we're going to iterate through a dictionary here
+            //using corrdinates just because we know they exist. This is because doing things this way will
+            //open the way for us to do fruity block generation in the future. 
+            for (let j = this._nodeMesh.dimensionsInNodes.y - 1; j >= 0; j--) {
+                //counting backwards, as we wanna check from the bottom up
+                let potentiallyUnoccupiedNode = this.getFirstUnoccupiedNodeInRow(j);
+                if (potentiallyUnoccupiedNode != undefined) {
+                    return potentiallyUnoccupiedNode;
+                }
+            }
+            return undefined;
+        }
+        //hmmmm....could probably go into a base class???
+        getFirstUnoccupiedNodeInRow(j) {
+            for (let i = 0; i < this._nodeMesh.dimensionsInNodes.x; i++) {
+                let nodeToCheck = this._nodeMesh.nodes.getValue(new phaser_1.Point(i, j));
+                if (!nodeToCheck.isOccupied) {
+                    return nodeToCheck;
+                }
+            }
+            return undefined;
+        }
+    }
+    exports.DownCascadeStrategy = DownCascadeStrategy;
 });
 //# sourceMappingURL=gravityBreak.js.map

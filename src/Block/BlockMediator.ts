@@ -6,7 +6,6 @@ export class BlockMediator extends Mediator{
 
     constructor(startingGridPosition: Phaser.Point ,injectedView:BlockView){
         super(injectedView);
-        this._blockView = this.view;
-        
+        this._blockView = this.view;  
     }
 }
