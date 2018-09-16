@@ -22,6 +22,18 @@ define("System/Mediator", ["require", "exports"], function (require, exports) {
     }
     exports.Mediator = Mediator;
 });
+define("Block/BlockColour", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var BlockColour;
+    (function (BlockColour) {
+        BlockColour[BlockColour["Red"] = 0] = "Red";
+        BlockColour[BlockColour["Yellow"] = 1] = "Yellow";
+        BlockColour[BlockColour["Green"] = 2] = "Green";
+        BlockColour[BlockColour["Purple"] = 3] = "Purple";
+        BlockColour[BlockColour["Blue"] = 4] = "Blue";
+    })(BlockColour = exports.BlockColour || (exports.BlockColour = {}));
+});
 define("Block/BlockView", ["require", "exports", "System/View"], function (require, exports, View_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -29,8 +41,8 @@ define("Block/BlockView", ["require", "exports", "System/View"], function (requi
         constructor(injectedGame, layerGroup) {
             super(injectedGame, layerGroup);
         }
-        initialise(startingCoordinates) {
-            this._diamondSprite = this.layerGroup.create(startingCoordinates.x, startingCoordinates.y, 'diamonds', 1);
+        initialise(startingCoordinates, colour) {
+            this._diamondSprite = this.layerGroup.create(startingCoordinates.x, startingCoordinates.y, 'diamonds', colour);
         }
         moveToPosition(destinationCoordinates, onComplete) {
             let tween = this.game.add.tween(this._diamondSprite).to({
@@ -45,31 +57,15 @@ define("Block/BlockView", ["require", "exports", "System/View"], function (requi
     }
     exports.BlockView = BlockView;
 });
-define("Cascade/SpawnData", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class SpawnData {
-        constructor(spawnNode, destinationNode) {
-            this._destinationNode = destinationNode;
-            this._spawnNode = spawnNode;
-        }
-        get destination() {
-            return this._destinationNode;
-        }
-        get spawnNode() {
-            return this._spawnNode;
-        }
-    }
-    exports.SpawnData = SpawnData;
-});
 define("Block/BlockMediator", ["require", "exports", "System/Mediator"], function (require, exports, Mediator_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class BlockMediator extends Mediator_1.Mediator {
-        constructor(startingGridPosition, injectedView) {
+        constructor(startingGridPosition, colour, injectedView) {
             super();
             this._blockView = injectedView;
-            this._blockView.initialise(this.translateGridCoordsToWorld(startingGridPosition));
+            this._blockColour = colour;
+            this._blockView.initialise(this.translateGridCoordsToWorld(startingGridPosition), this._blockColour);
         }
         cascadeBlockTo(gridDestination) {
             this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.onBlockMoveComplete.bind(this));
@@ -212,6 +208,23 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
     }
     exports.NodeMeshFactory = NodeMeshFactory;
 });
+define("Cascade/SpawnData", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class SpawnData {
+        constructor(spawnNode, destinationNode) {
+            this._destinationNode = destinationNode;
+            this._spawnNode = spawnNode;
+        }
+        get destination() {
+            return this._destinationNode;
+        }
+        get spawnNode() {
+            return this._spawnNode;
+        }
+    }
+    exports.SpawnData = SpawnData;
+});
 define("Cascade/ICascadeStrategy", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -277,7 +290,7 @@ define("Cascade/CascadeStrategyProvider", ["require", "exports", "Cascade/DownCa
     }
     exports.CascadeStrategyProvider = CascadeStrategyProvider;
 });
-define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Block/BlockView"], function (require, exports, BlockMediator_1, BlockView_1) {
+define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Block/BlockView", "Block/BlockColour"], function (require, exports, BlockMediator_1, BlockView_1, BlockColour_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class BlockFactory {
@@ -291,8 +304,14 @@ define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Bloc
         }
         createBlockAtPosition(startingPosition) {
             let view = this.createBlockView();
-            let mediator = new BlockMediator_1.BlockMediator(startingPosition, view);
+            let mediator = new BlockMediator_1.BlockMediator(startingPosition, this.generateRandomColour(), view);
             return mediator;
+        }
+        generateRandomColour() {
+            //hacky solution for randomising between enum values. WILL fail on string enums.
+            let numEnumValues = Object.keys(BlockColour_1.BlockColour).length / 2;
+            let randomEnumInt = Math.floor(Math.random() * numEnumValues);
+            return randomEnumInt;
         }
         createBlockView() {
             let blockView = new BlockView_1.BlockView(this._game, this._blocksLayerGroup);
@@ -472,7 +491,7 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
             this.initialise();
         }
         initialise() {
-            let gridController = new GridController_1.GridController(10, 10, this._systemModel.blockFactory, this._systemModel.eventHub);
+            let gridController = new GridController_1.GridController(9, 9, this._systemModel.blockFactory, this._systemModel.eventHub);
             this.systemModel.eventHub.dispatchEvent(GridEvents_2.GridEvents.InitialiseGridEvent);
         }
         bootstrapGame() {

@@ -1,5 +1,6 @@
 import { BlockMediator } from "./BlockMediator"
 import { BlockView } from "./BlockView"
+import { BlockColour } from "./BlockColour";
 
 export class BlockFactory{
     _game: Phaser.Game;
@@ -16,8 +17,15 @@ export class BlockFactory{
 
     createBlockAtPosition(startingPosition: Phaser.Point): BlockMediator {
         let view: BlockView = this.createBlockView();
-        let mediator: BlockMediator = new BlockMediator(startingPosition, view) 
+        let mediator: BlockMediator = new BlockMediator(startingPosition, this.generateRandomColour(), view) 
         return mediator;
+    }
+
+    private generateRandomColour(): BlockColour{
+        //hacky solution for randomising between enum values. WILL fail on string enums.
+        let numEnumValues: number = Object.keys(BlockColour).length/2;
+        let randomEnumInt: number = Math.floor(Math.random()*numEnumValues);
+        return randomEnumInt;
     }
 
     private createBlockView(): BlockView {

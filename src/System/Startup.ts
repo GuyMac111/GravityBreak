@@ -27,7 +27,7 @@ export class Startup{
     }
     
     private initialise():void {
-        let gridController: GridController = new GridController(10,10,this._systemModel.blockFactory, this._systemModel.eventHub);
+        let gridController: GridController = new GridController(9,9,this._systemModel.blockFactory, this._systemModel.eventHub);
         this.systemModel.eventHub.dispatchEvent(GridEvents.InitialiseGridEvent);   
     }
     

@@ -1,4 +1,5 @@
 import { View } from "../System/View";
+import { BlockColour } from "./BlockColour";
 
 export class BlockView extends View{
     private _diamondSprite: Phaser.Sprite;
@@ -7,8 +8,8 @@ export class BlockView extends View{
         super(injectedGame, layerGroup);
     }
 
-    initialise(startingCoordinates: Phaser.Point){
-        this._diamondSprite = this.layerGroup.create(startingCoordinates.x,startingCoordinates.y,'diamonds',1);
+    initialise(startingCoordinates: Phaser.Point, colour: BlockColour){
+        this._diamondSprite = this.layerGroup.create(startingCoordinates.x,startingCoordinates.y,'diamonds',colour);
     }
 
     moveToPosition(destinationCoordinates: Phaser.Point, onComplete?: () => void) {

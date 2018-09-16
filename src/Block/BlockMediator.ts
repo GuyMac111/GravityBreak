@@ -1,17 +1,18 @@
 import { Mediator } from "../System/Mediator";
 import { BlockView } from "./BlockView";
-import { SpawnData } from "../Cascade/SpawnData";
-import { GridNode } from "../Grid/GridNode";
+import { BlockColour } from "./BlockColour";
 
 export class BlockMediator extends Mediator{
     private _blockView: BlockView;
+    private _blockColour: BlockColour;
 
     blockMoveComplete: (completedBlock: BlockMediator)=>void ;
 
-    constructor(startingGridPosition: Phaser.Point ,injectedView:BlockView){
+    constructor(startingGridPosition: Phaser.Point, colour: BlockColour, injectedView:BlockView){
         super();
-        this._blockView = injectedView; 
-        this._blockView.initialise(this.translateGridCoordsToWorld(startingGridPosition));
+        this._blockView = injectedView;
+        this._blockColour = colour;
+        this._blockView.initialise(this.translateGridCoordsToWorld(startingGridPosition), this._blockColour);
     }
 
     cascadeBlockTo(gridDestination: Phaser.Point): void{
