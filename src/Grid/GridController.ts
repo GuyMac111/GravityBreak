@@ -29,9 +29,15 @@ export class GridController{
         if(cascadeStrategy.shouldSpawnBlock){
             let spawnData: SpawnData = cascadeStrategy.getNextSpawn();
             let block:BlockMediator = this._blockFactory.createBlockAtPosition(spawnData.spawnNode.gridCoordinate);
-            block.blockMoveComplete = this.onBlockFallComplete.bind(this);
+            let anon: (med: BlockMediator, data:SpawnData) => void = (med: BlockMediator, data:SpawnData):void => {
+                console.log(`GridController::: Block move complete. (initial position ${data.spawnNode.gridCoordinate.x},${data.spawnNode.gridCoordinate.y})`)
+                this.onBlockFallComplete(med);
+            }
+            // block.blockMoveComplete = this.onBlockFallComplete.bind(this);
+            block.blockMoveComplete = anon;
             //Set the node's reference here so it can be omitted from future checks
             spawnData.destination.currentBlock = block;
+            console.log(`GridController::: Block move started (initial position ${spawnData.spawnNode.gridCoordinate.x},${spawnData.spawnNode.gridCoordinate.y})`);
             block.cascadeBlockTo(spawnData.destination.gridCoordinate);
 
         }else{
@@ -41,10 +47,7 @@ export class GridController{
     }
 
     private onBlockFallComplete(completedBlock: BlockMediator) : void {
-        console.log("GridController::: Block move complete acknowledged.")
         completedBlock.blockMoveComplete = undefined;
         this.initialiseGrid();
-        //YOU LEFT OFF::: We have our thrown error regarding calling for extra blocks to be added when none can be 
-        //after the check that's "meant" to be protecting us
     }
 }

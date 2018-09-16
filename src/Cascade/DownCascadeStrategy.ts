@@ -12,7 +12,7 @@ export class DownCascadeStrategy implements ICascadeStrategy{
         this._nodeMesh = nodeMesh;
     }
     
-    shouldSpawnBlock(): boolean{
+    get shouldSpawnBlock(): boolean{
         return this.findNextUnoccupiedNode() != undefined;
     }
 

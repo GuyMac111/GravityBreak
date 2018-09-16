@@ -9,17 +9,17 @@ export class BlockView extends View{
 
     initialise(startingCoordinates: Phaser.Point){
         this._diamondSprite = this.layerGroup.create(startingCoordinates.x,startingCoordinates.y,'diamonds',1);
-        // this._diamondSprite.anchor.set(0.5,0.5);
     }
 
     moveToPosition(destinationCoordinates: Phaser.Point, onComplete?: () => void) {
         let tween:Phaser.Tween = this.game.add.tween(this._diamondSprite).to({
                 x: destinationCoordinates.x, 
                 y: destinationCoordinates.y
-            }, 200, Phaser.Easing.Linear.None);
+            }, 100, Phaser.Easing.Linear.None);
         
         if(onComplete!=undefined){
-            onComplete();
-        }   
+            tween.onComplete.add(onComplete);
+        }
+        tween.start();
     }
 }

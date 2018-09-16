@@ -1,6 +1,6 @@
 import { SpawnData } from "./SpawnData";
 
 export interface ICascadeStrategy{
-    shouldSpawnBlock(): boolean;
+    shouldSpawnBlock: boolean;
     getNextSpawn(): SpawnData;
 }
