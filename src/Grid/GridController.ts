@@ -20,29 +20,34 @@ export class GridController{
         this._cascadeStrategyProvider = new CascadeStrategyProvider(this._gridNodes);
     }
 
-    //TODO: using strategy provider we should now attempt filling the grid.
-
     initialiseGrid(): void{
+        this.fillGrid();
+    }
+
+    private fillGrid(): void{
+        this.spawnBlocks();
+    }
+
+    private spawnBlocks(): void{
         //Lets temporarliy use this func as our fall function...just for testing :)
         let cascadeStrategy: ICascadeStrategy = this._cascadeStrategyProvider.cascadeStrategy;
         //TODO:: hmmmm....Maybe remove this check and just check here for undefined?
         if(cascadeStrategy.shouldSpawnBlock){
             let spawnData: SpawnData = cascadeStrategy.nextSpawn;
             let block:BlockMediator = this._blockFactory.createBlockAtPosition(spawnData.spawnNode.gridCoordinate);
-            block.blockMoveComplete = this.onBlockFallComplete.bind(this);
+            block.blockMoveComplete = this.onBlockSpawnComplete.bind(this);
             //Set the node's reference here so it can be omitted from future checks
             spawnData.destination.currentBlock = block;
-            console.log(`GridController::: Block move started (initial position ${spawnData.spawnNode.gridCoordinate.x},${spawnData.spawnNode.gridCoordinate.y})`);
+            console.log(`GridController.spawnBlocks()::: Block move started (initial position ${spawnData.spawnNode.gridCoordinate.x},${spawnData.spawnNode.gridCoordinate.y})`);
             block.cascadeBlockTo(spawnData.destination.gridCoordinate);
-
         }else{
             //Our grid should be full at this point
-            console.log("GridController::: Our grid is fully cascaded.....supposedly.");
+            console.log("GridController.spawnBlocks()::: Our grid is fully cascaded.....supposedly.");
         }
     }
 
-    private onBlockFallComplete(completedBlock: BlockMediator) : void {
+    private onBlockSpawnComplete(completedBlock: BlockMediator) : void{
         completedBlock.blockMoveComplete = undefined;
-        this.initialiseGrid();
+        this.spawnBlocks();
     }
 }
