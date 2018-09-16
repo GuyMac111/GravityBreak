@@ -43,7 +43,7 @@ export class DownCascadeStrategy implements ICascadeStrategy{
     //hmmmm....could probably go into a base class???
     private getFirstUnoccupiedNodeInRow(j:number): GridNode | undefined{
         for(let i = 0; i<this._nodeMesh.dimensionsInNodes.x;i++) {
-            let nodeToCheck: GridNode = this._nodeMesh.nodes.getValue(new Point(i,j));
+            let nodeToCheck: GridNode = this._nodeMesh.nodes.getValue(new Phaser.Point(i,j));
             if(!nodeToCheck.isOccupied){
                 return nodeToCheck;
             }

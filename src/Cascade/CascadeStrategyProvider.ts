@@ -1,20 +1,22 @@
 import { ICascadeStrategy } from "./ICascadeStrategy";
 import { Dictionary } from "typescript-collections";
 import { GridNode } from "../Grid/GridNode";
+import { NodeMesh } from "../Grid/NodeMesh";
+import { DownCascadeStrategy } from "./DownCascadeStrategy";
 
 export class CascadeStrategyProvider{
+
+    private _downwardStrategy: DownCascadeStrategy;
         
-    constructor(nodeMesh: Dictionary<Phaser.Point, GridNode>){
+    constructor(nodeMesh: NodeMesh){
         this.initialiseStrategies(nodeMesh);
-        
     }
     
-    // get cascadeStrategy(): ICascadeStrategy{
+    get cascadeStrategy(): ICascadeStrategy{
+        return this._downwardStrategy;    
+    }
 
-    // }
-
-    private initialiseStrategies(nodeMesh: Dictionary<Phaser.Point, GridNode>): void{
-        //TODO
-        
+    private initialiseStrategies(nodeMesh: NodeMesh): void{
+        this._downwardStrategy = new DownCascadeStrategy(nodeMesh);        
     }
 }

@@ -14,8 +14,8 @@ class GravityBreakGame{
 	}
 	
 	create(){
-		let diamond = this.game.add.sprite( this.game.world.centerX, this.game.world.centerY,'diamonds',1);
-		diamond.anchor.setTo( 0.5, 0.5 );
+		// let diamond = this.game.add.sprite( this.game.world.centerX, this.game.world.centerY,'diamonds',1);
+		// diamond.anchor.setTo( 0.5, 0.5 );
 
 		let startup: Startup = new Startup(this.game);
 		startup.initialiseGame();

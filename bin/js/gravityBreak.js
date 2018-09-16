@@ -17,8 +17,7 @@ define("System/Mediator", ["require", "exports"], function (require, exports) {
     class Mediator {
         //Important to note: I'm calling these contructor args 'injected' just to highlight that I'd 
         //use/create dependency injection here given more time.
-        constructor(injectedView) {
-            this.view = injectedView;
+        constructor() {
         }
     }
     exports.Mediator = Mediator;
@@ -30,6 +29,19 @@ define("Block/BlockView", ["require", "exports", "System/View"], function (requi
         constructor(injectedGame, layerGroup) {
             super(injectedGame, layerGroup);
         }
+        initialise(startingCoordinates) {
+            this._diamondSprite = this.layerGroup.create(startingCoordinates.x, startingCoordinates.y, 'diamonds', 1);
+            // this._diamondSprite.anchor.set(0.5,0.5);
+        }
+        moveToPosition(destinationCoordinates, onComplete) {
+            let tween = this.game.add.tween(this._diamondSprite).to({
+                x: destinationCoordinates.x,
+                y: destinationCoordinates.y
+            }, 200, Phaser.Easing.Linear.None);
+            if (onComplete != undefined) {
+                onComplete();
+            }
+        }
     }
     exports.BlockView = BlockView;
 });
@@ -38,8 +50,22 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator"], functio
     Object.defineProperty(exports, "__esModule", { value: true });
     class BlockMediator extends Mediator_1.Mediator {
         constructor(startingGridPosition, injectedView) {
-            super(injectedView);
-            this._blockView = this.view;
+            super();
+            this._blockView = injectedView;
+            this._blockView.initialise(this.translateGridCoordsToWorld(startingGridPosition));
+        }
+        cascadeBlockTo(gridDestination) {
+            this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.onBlockMoveComplete.bind(this));
+            console.log("BlockMediator::: Block move started");
+        }
+        onBlockMoveComplete() {
+            console.log("BlockMediator::: Block completed cascading");
+            if (this.blockMoveComplete != null) {
+                this.blockMoveComplete(this);
+            }
+        }
+        translateGridCoordsToWorld(gridCoords) {
+            return new Phaser.Point(gridCoords.x * 64, gridCoords.y * 64);
         }
     }
     exports.BlockMediator = BlockMediator;
@@ -170,113 +196,6 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
     }
     exports.NodeMeshFactory = NodeMeshFactory;
 });
-define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory"], function (require, exports, NodeMeshFactory_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class GridController {
-        constructor(nodesHigh, nodesWide) {
-            //Given more time, the NodeMesh would be an object, instantiated & injected via a factory defined within the context.
-            let factory = new NodeMeshFactory_1.NodeMeshFactory();
-            let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
-            this._gridNodes = factory.createNodeMesh(dimensionsInNodes);
-        }
-    }
-    exports.GridController = GridController;
-});
-define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Block/BlockView"], function (require, exports, BlockMediator_1, BlockView_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class BlockFactory {
-        //We're going to use this starting point to setup BlockMediators and Views.
-        //with absolutely everything they need.
-        //It's also going to substitute as a VERY hamfisted Dependency Injector for those classes.
-        //But as it also needs an instance of game, it's also going to need to be "injected" with "game".
-        constructor(game, blockLayerGroup) {
-            this._game = game;
-            this._blocksLayerGroup = blockLayerGroup;
-        }
-        createBlockAtPosition(startingPosition) {
-            let view = this.createBlockView();
-            let mediator = new BlockMediator_1.BlockMediator(startingPosition, view);
-            return mediator;
-        }
-        createBlockView() {
-            let blockView = new BlockView_1.BlockView(this._game, this._blocksLayerGroup);
-            return blockView;
-        }
-    }
-    exports.BlockFactory = BlockFactory;
-});
-define("System/ISystemModel", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-});
-define("System/SystemModel", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class SystemModel {
-        setBlockFactory(blockFactory) {
-            this._blockFactory = blockFactory;
-        }
-        getBlockFactory() {
-            return this._blockFactory;
-        }
-    }
-    exports.SystemModel = SystemModel;
-});
-define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/SystemModel", "Grid/GridController"], function (require, exports, BlockFactory_1, SystemModel_1, GridController_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class Startup {
-        ////
-        ///Perhaps we should separate Startup into 1: Bootstrap and 2: Initialise
-        ///Don't really intend to create a full context so we can keep things close in here for the time being
-        ///and then decide to split things apart if things get too tightly coupled
-        constructor(game) {
-            this._game = game;
-        }
-        initialiseGame() {
-            this._systemModel = new SystemModel_1.SystemModel();
-            this.bootstrapGame();
-            this.initialiseGrid();
-        }
-        get systemModel() {
-            return this._systemModel;
-        }
-        bootstrapGame() {
-            this.bootstrapBlockFactory();
-        }
-        initialiseGrid() {
-            let gridController = new GridController_1.GridController(10, 10);
-            //YOU LEFT OFF: You were about to refactor GridController into Grid and GridFactory;
-        }
-        bootstrapBlockFactory() {
-            let blockLayerGroup = this._game.add.group();
-            let blockFactory = new BlockFactory_1.BlockFactory(this._game, blockLayerGroup);
-            this._systemModel.setBlockFactory(blockFactory);
-        }
-    }
-    exports.Startup = Startup;
-});
-define("GravityBreak", ["require", "exports", "System/Startup"], function (require, exports, Startup_1) {
-    "use strict";
-    class GravityBreakGame {
-        constructor() {
-            this.game = new Phaser.Game(800, 600, Phaser.AUTO, 'content', { preload: this.preload, create: this.create });
-        }
-        preload() {
-            this.game.load.spritesheet("diamonds", "assets/diamonds32x5.png", 64, 64, 5);
-            this.game.stage.backgroundColor = 0xB20059;
-        }
-        create() {
-            let diamond = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, 'diamonds', 1);
-            diamond.anchor.setTo(0.5, 0.5);
-            let startup = new Startup_1.Startup(this.game);
-            startup.initialiseGame();
-        }
-    }
-    return GravityBreakGame;
-});
 define("Cascade/SpawnData", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -298,22 +217,7 @@ define("Cascade/ICascadeStrategy", ["require", "exports"], function (require, ex
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("Cascade/CascadeStrategyProvider", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class CascadeStrategyProvider {
-        constructor(nodeMesh) {
-            this.initialiseStrategies(nodeMesh);
-        }
-        // get cascadeStrategy(): ICascadeStrategy{
-        // }
-        initialiseStrategies(nodeMesh) {
-            //TODO
-        }
-    }
-    exports.CascadeStrategyProvider = CascadeStrategyProvider;
-});
-define("Cascade/DownCascadeStrategy", ["require", "exports", "Cascade/SpawnData", "phaser"], function (require, exports, SpawnData_1, phaser_1) {
+define("Cascade/DownCascadeStrategy", ["require", "exports", "Cascade/SpawnData"], function (require, exports, SpawnData_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class DownCascadeStrategy {
@@ -348,7 +252,7 @@ define("Cascade/DownCascadeStrategy", ["require", "exports", "Cascade/SpawnData"
         //hmmmm....could probably go into a base class???
         getFirstUnoccupiedNodeInRow(j) {
             for (let i = 0; i < this._nodeMesh.dimensionsInNodes.x; i++) {
-                let nodeToCheck = this._nodeMesh.nodes.getValue(new phaser_1.Point(i, j));
+                let nodeToCheck = this._nodeMesh.nodes.getValue(new Phaser.Point(i, j));
                 if (!nodeToCheck.isOccupied) {
                     return nodeToCheck;
                 }
@@ -357,5 +261,155 @@ define("Cascade/DownCascadeStrategy", ["require", "exports", "Cascade/SpawnData"
         }
     }
     exports.DownCascadeStrategy = DownCascadeStrategy;
+});
+define("Cascade/CascadeStrategyProvider", ["require", "exports", "Cascade/DownCascadeStrategy"], function (require, exports, DownCascadeStrategy_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class CascadeStrategyProvider {
+        constructor(nodeMesh) {
+            this.initialiseStrategies(nodeMesh);
+        }
+        get cascadeStrategy() {
+            return this._downwardStrategy;
+        }
+        initialiseStrategies(nodeMesh) {
+            this._downwardStrategy = new DownCascadeStrategy_1.DownCascadeStrategy(nodeMesh);
+        }
+    }
+    exports.CascadeStrategyProvider = CascadeStrategyProvider;
+});
+define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Block/BlockView"], function (require, exports, BlockMediator_1, BlockView_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class BlockFactory {
+        //We're going to use this starting point to setup BlockMediators and Views.
+        //with absolutely everything they need.
+        //It's also going to substitute as a VERY hamfisted Dependency Injector for those classes.
+        //But as it also needs an instance of game, it's also going to need to be "injected" with "game".
+        constructor(game, blockLayerGroup) {
+            this._game = game;
+            this._blocksLayerGroup = blockLayerGroup;
+        }
+        createBlockAtPosition(startingPosition) {
+            let view = this.createBlockView();
+            let mediator = new BlockMediator_1.BlockMediator(startingPosition, view);
+            return mediator;
+        }
+        createBlockView() {
+            let blockView = new BlockView_1.BlockView(this._game, this._blocksLayerGroup);
+            return blockView;
+        }
+    }
+    exports.BlockFactory = BlockFactory;
+});
+define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Cascade/CascadeStrategyProvider"], function (require, exports, NodeMeshFactory_1, CascadeStrategyProvider_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GridController {
+        constructor(nodesHigh, nodesWide, injectedBlockFactory) {
+            let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
+            this._blockFactory = injectedBlockFactory;
+            //TODO: move instantiation of NodeMeshFactory into bootstrap and 'inject'
+            let nodeMeshFactory = new NodeMeshFactory_1.NodeMeshFactory();
+            this._gridNodes = nodeMeshFactory.createNodeMesh(dimensionsInNodes);
+            this._cascadeStrategyProvider = new CascadeStrategyProvider_1.CascadeStrategyProvider(this._gridNodes);
+        }
+        //TODO: using strategy provider we should now attempt filling the grid.
+        initialiseGrid() {
+            //Lets temporarliy use this func as our fall function...just for testing :)
+            let cascadeStrategy = this._cascadeStrategyProvider.cascadeStrategy;
+            //TODO:: hmmmm....Maybe remove this check and just check here for undefined?
+            if (cascadeStrategy.shouldSpawnBlock) {
+                let spawnData = cascadeStrategy.getNextSpawn();
+                let block = this._blockFactory.createBlockAtPosition(spawnData.spawnNode.gridCoordinate);
+                block.blockMoveComplete = this.onBlockFallComplete.bind(this);
+                //Set the node's reference here so it can be omitted from future checks
+                spawnData.destination.currentBlock = block;
+                block.cascadeBlockTo(spawnData.destination.gridCoordinate);
+            }
+            else {
+                //Our grid should be full at this point
+                console.log("GridController::: Our grid is fully cascaded.....supposedly.");
+            }
+        }
+        onBlockFallComplete(completedBlock) {
+            console.log("GridController::: Block move complete acknowledged.");
+            completedBlock.blockMoveComplete = undefined;
+            this.initialiseGrid();
+        }
+    }
+    exports.GridController = GridController;
+});
+define("System/ISystemModel", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+});
+define("System/SystemModel", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class SystemModel {
+        setBlockFactory(blockFactory) {
+            this._blockFactory = blockFactory;
+        }
+        //TODO:: Setup interface so that this becomes a getter. 
+        //Having multiple patterns across such a small project is NOT a good look.
+        getBlockFactory() {
+            return this._blockFactory;
+        }
+    }
+    exports.SystemModel = SystemModel;
+});
+define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/SystemModel", "Grid/GridController"], function (require, exports, BlockFactory_1, SystemModel_1, GridController_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class Startup {
+        ////
+        ///Perhaps we should separate Startup into 1: Bootstrap and 2: Initialise
+        ///Don't really intend to create a full context so we can keep things close in here for the time being
+        ///and then decide to split things apart if things get too tightly coupled
+        constructor(game) {
+            this._game = game;
+        }
+        initialiseGame() {
+            this._systemModel = new SystemModel_1.SystemModel();
+            this.bootstrapGame();
+            this.initialiseGrid();
+        }
+        get systemModel() {
+            return this._systemModel;
+        }
+        bootstrapGame() {
+            this.bootstrapBlockFactory();
+        }
+        initialiseGrid() {
+            let gridController = new GridController_1.GridController(10, 10, this._systemModel.getBlockFactory());
+            gridController.initialiseGrid();
+        }
+        bootstrapBlockFactory() {
+            let blockLayerGroup = this._game.add.group();
+            let blockFactory = new BlockFactory_1.BlockFactory(this._game, blockLayerGroup);
+            this._systemModel.setBlockFactory(blockFactory);
+        }
+    }
+    exports.Startup = Startup;
+});
+define("GravityBreak", ["require", "exports", "System/Startup"], function (require, exports, Startup_1) {
+    "use strict";
+    class GravityBreakGame {
+        constructor() {
+            this.game = new Phaser.Game(800, 600, Phaser.AUTO, 'content', { preload: this.preload, create: this.create });
+        }
+        preload() {
+            this.game.load.spritesheet("diamonds", "assets/diamonds32x5.png", 64, 64, 5);
+            this.game.stage.backgroundColor = 0xB20059;
+        }
+        create() {
+            // let diamond = this.game.add.sprite( this.game.world.centerX, this.game.world.centerY,'diamonds',1);
+            // diamond.anchor.setTo( 0.5, 0.5 );
+            let startup = new Startup_1.Startup(this.game);
+            startup.initialiseGame();
+        }
+    }
+    return GravityBreakGame;
 });
 //# sourceMappingURL=gravityBreak.js.map

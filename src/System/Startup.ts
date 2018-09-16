@@ -33,8 +33,8 @@ export class Startup{
     }
 
     private initialiseGrid(){
-        let gridController: GridController = new GridController(10,10);
-        //YOU LEFT OFF: You were about to refactor GridController into Grid and GridFactory;
+        let gridController: GridController = new GridController(10,10,this._systemModel.getBlockFactory());
+        gridController.initialiseGrid();
     }
 
     private bootstrapBlockFactory(){
