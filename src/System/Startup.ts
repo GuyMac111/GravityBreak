@@ -6,7 +6,7 @@ import { GridController } from "../Grid/GridController";
 export class Startup{
     private _game: Phaser.Game;
     ////
-    //hmmmmm: Does this need to exist?
+    //hmmmmm: Does this need to exist?.......so far....no.
     private _systemModel: SystemModel;
     ////
 
@@ -33,14 +33,14 @@ export class Startup{
     }
 
     private initialiseGrid(){
-        let gridController: GridController = new GridController(10,10,this._systemModel.getBlockFactory());
+        let gridController: GridController = new GridController(10,10,this._systemModel.blockFactory);
         gridController.initialiseGrid();
     }
 
     private bootstrapBlockFactory(){
         let blockLayerGroup: Phaser.Group = this._game.add.group();
         let blockFactory: BlockFactory = new BlockFactory(this._game, blockLayerGroup)
-        this._systemModel.setBlockFactory(blockFactory);
+        this._systemModel.blockFactory = blockFactory;
     }
 
 }

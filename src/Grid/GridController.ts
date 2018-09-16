@@ -27,14 +27,9 @@ export class GridController{
         let cascadeStrategy: ICascadeStrategy = this._cascadeStrategyProvider.cascadeStrategy;
         //TODO:: hmmmm....Maybe remove this check and just check here for undefined?
         if(cascadeStrategy.shouldSpawnBlock){
-            let spawnData: SpawnData = cascadeStrategy.getNextSpawn();
+            let spawnData: SpawnData = cascadeStrategy.nextSpawn;
             let block:BlockMediator = this._blockFactory.createBlockAtPosition(spawnData.spawnNode.gridCoordinate);
-            let anon: (med: BlockMediator, data:SpawnData) => void = (med: BlockMediator, data:SpawnData):void => {
-                console.log(`GridController::: Block move complete. (initial position ${data.spawnNode.gridCoordinate.x},${data.spawnNode.gridCoordinate.y})`)
-                this.onBlockFallComplete(med);
-            }
-            // block.blockMoveComplete = this.onBlockFallComplete.bind(this);
-            block.blockMoveComplete = anon;
+            block.blockMoveComplete = this.onBlockFallComplete.bind(this);
             //Set the node's reference here so it can be omitted from future checks
             spawnData.destination.currentBlock = block;
             console.log(`GridController::: Block move started (initial position ${spawnData.spawnNode.gridCoordinate.x},${spawnData.spawnNode.gridCoordinate.y})`);

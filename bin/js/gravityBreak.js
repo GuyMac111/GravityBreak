@@ -62,24 +62,22 @@ define("Cascade/SpawnData", ["require", "exports"], function (require, exports) 
     }
     exports.SpawnData = SpawnData;
 });
-define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Cascade/SpawnData", "Grid/GridNode"], function (require, exports, Mediator_1, SpawnData_1, GridNode_1) {
+define("Block/BlockMediator", ["require", "exports", "System/Mediator"], function (require, exports, Mediator_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class BlockMediator extends Mediator_1.Mediator {
         constructor(startingGridPosition, injectedView) {
             super();
             this._blockView = injectedView;
-            this._spawnData = new SpawnData_1.SpawnData(new GridNode_1.GridNode(startingGridPosition), new GridNode_1.GridNode(startingGridPosition));
             this._blockView.initialise(this.translateGridCoordsToWorld(startingGridPosition));
         }
         cascadeBlockTo(gridDestination) {
             this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.onBlockMoveComplete.bind(this));
-            console.log(`BlockMediator::: Block move started (initial position ${this._spawnData.spawnNode.gridCoordinate.x},${this._spawnData.spawnNode.gridCoordinate.y})`);
         }
         onBlockMoveComplete() {
             console.log("BlockMediator::: Block completed cascading");
             if (this.blockMoveComplete != null) {
-                this.blockMoveComplete(this, this._spawnData);
+                this.blockMoveComplete(this);
             }
         }
         translateGridCoordsToWorld(gridCoords) {
@@ -127,7 +125,7 @@ define("Grid/NodeMesh", ["require", "exports"], function (require, exports) {
     }
     exports.NodeMesh = NodeMesh;
 });
-define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescript-collections", "Grid/NodeMesh"], function (require, exports, GridNode_2, typescript_collections_1, NodeMesh_1) {
+define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescript-collections", "Grid/NodeMesh"], function (require, exports, GridNode_1, typescript_collections_1, NodeMesh_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class NodeMeshFactory {
@@ -142,7 +140,7 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
             let nodeMesh = new typescript_collections_1.Dictionary();
             for (let i = 0; i < _dimensionsInNodes.x; i++) {
                 for (let j = 0; j < _dimensionsInNodes.y; j++) {
-                    let node = new GridNode_2.GridNode(new Phaser.Point(i, j));
+                    let node = new GridNode_1.GridNode(new Phaser.Point(i, j));
                     nodeMesh.setValue(node.gridCoordinate, node);
                     console.log(`NodeMeshFactory::: Created node with grid location ${node.gridCoordinate.x},${node.gridCoordinate.y}`);
                 }
@@ -209,7 +207,7 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
             }
         }
         createSecretSpawnNode(nodeLocation) {
-            this._spawnNodeMesh.setValue(nodeLocation, new GridNode_2.GridNode(nodeLocation));
+            this._spawnNodeMesh.setValue(nodeLocation, new GridNode_1.GridNode(nodeLocation));
         }
     }
     exports.NodeMeshFactory = NodeMeshFactory;
@@ -218,7 +216,7 @@ define("Cascade/ICascadeStrategy", ["require", "exports"], function (require, ex
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("Cascade/DownCascadeStrategy", ["require", "exports", "Cascade/SpawnData"], function (require, exports, SpawnData_2) {
+define("Cascade/DownCascadeStrategy", ["require", "exports", "Cascade/SpawnData"], function (require, exports, SpawnData_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class DownCascadeStrategy {
@@ -228,14 +226,14 @@ define("Cascade/DownCascadeStrategy", ["require", "exports", "Cascade/SpawnData"
         get shouldSpawnBlock() {
             return this.findNextUnoccupiedNode() != undefined;
         }
-        getNextSpawn() {
+        get nextSpawn() {
             let destinationNode = this.findNextUnoccupiedNode();
             if (destinationNode == undefined) {
                 throw new Error(`Something went wrong. Searching the grid for next unoccupied node to spawn to, but we got undefined`);
             }
             let spawnNodeCoords = new Phaser.Point(destinationNode.gridCoordinate.x, -1);
             //-1 because it's the invisible 'SpawnNode' at the top;
-            return new SpawnData_2.SpawnData(this._nodeMesh.spawnNodes.getValue(spawnNodeCoords), destinationNode);
+            return new SpawnData_1.SpawnData(this._nodeMesh.spawnNodes.getValue(spawnNodeCoords), destinationNode);
         }
         findNextUnoccupiedNode() {
             //this is naughty and unperformant, but we're going to iterate through a dictionary here
@@ -321,14 +319,9 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
             let cascadeStrategy = this._cascadeStrategyProvider.cascadeStrategy;
             //TODO:: hmmmm....Maybe remove this check and just check here for undefined?
             if (cascadeStrategy.shouldSpawnBlock) {
-                let spawnData = cascadeStrategy.getNextSpawn();
+                let spawnData = cascadeStrategy.nextSpawn;
                 let block = this._blockFactory.createBlockAtPosition(spawnData.spawnNode.gridCoordinate);
-                let anon = (med, data) => {
-                    console.log(`GridController::: Block move complete. (initial position ${data.spawnNode.gridCoordinate.x},${data.spawnNode.gridCoordinate.y})`);
-                    this.onBlockFallComplete(med);
-                };
-                // block.blockMoveComplete = this.onBlockFallComplete.bind(this);
-                block.blockMoveComplete = anon;
+                block.blockMoveComplete = this.onBlockFallComplete.bind(this);
                 //Set the node's reference here so it can be omitted from future checks
                 spawnData.destination.currentBlock = block;
                 console.log(`GridController::: Block move started (initial position ${spawnData.spawnNode.gridCoordinate.x},${spawnData.spawnNode.gridCoordinate.y})`);

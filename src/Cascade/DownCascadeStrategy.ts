@@ -16,7 +16,7 @@ export class DownCascadeStrategy implements ICascadeStrategy{
         return this.findNextUnoccupiedNode() != undefined;
     }
 
-    getNextSpawn(): SpawnData{
+    get nextSpawn(): SpawnData{
         let destinationNode: GridNode = this.findNextUnoccupiedNode();
         if(destinationNode==undefined){
             throw new Error(`Something went wrong. Searching the grid for next unoccupied node to spawn to, but we got undefined`);
