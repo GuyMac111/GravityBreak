@@ -5,13 +5,19 @@ import { ICascadeStrategy } from "../Cascade/ICascadeStrategy";
 import { BlockFactory } from "../Block/BlockFactory";
 import { SpawnData } from "../Cascade/SpawnData";
 import { BlockMediator } from "../Block/BlockMediator";
+import { EventHandler } from "../System/Events/EventHandler";
+import { EventHub } from "../System/Events/EventHub";
+import { GridEvents } from "./GridEvents";
 
-export class GridController{
+export class GridController extends EventHandler{
     private _gridNodes: NodeMesh;
     private _cascadeStrategyProvider: CascadeStrategyProvider;
     private _blockFactory: BlockFactory;
     
-    constructor(nodesHigh:number, nodesWide:number, injectedBlockFactory: BlockFactory){
+    constructor(nodesHigh:number, nodesWide:number, injectedBlockFactory: BlockFactory, injectedEventHub: EventHub){
+        super(injectedEventHub);
+        this.addEventListener(GridEvents.InitialiseGridEvent, this.onInitialiseEvent.bind(this));
+
         let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
         this._blockFactory = injectedBlockFactory;
         //TODO: move instantiation of NodeMeshFactory into bootstrap and 'inject'
@@ -20,7 +26,8 @@ export class GridController{
         this._cascadeStrategyProvider = new CascadeStrategyProvider(this._gridNodes);
     }
 
-    initialiseGrid(): void{
+    private onInitialiseEvent(): void{
+        console.log("GridController.onInitialiseEvent()::: Initialise event received")
         this.fillGrid();
     }
 

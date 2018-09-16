@@ -19,7 +19,7 @@ export class BlockMediator extends Mediator{
     }
 
     onBlockMoveComplete(): void{
-        console.log("BlockMediator::: Block completed cascading");
+        console.log("BlockMediator.onBlockMoveComplete()::: Block completed cascading");
         if(this.blockMoveComplete!=null){
             this.blockMoveComplete(this);
         }

@@ -2,6 +2,8 @@ import { BlockFactory } from "../Block/BlockFactory";
 import { SystemModel } from "./SystemModel";
 import { ISystemModel } from "./ISystemModel";
 import { GridController } from "../Grid/GridController";
+import { EventHub } from "./Events/EventHub";
+import { GridEvents } from "../Grid/GridEvents";
 
 export class Startup{
     private _game: Phaser.Game;
@@ -21,26 +23,31 @@ export class Startup{
     initialiseGame(){
         this._systemModel = new SystemModel();
         this.bootstrapGame();
-        this.initialiseGrid();
+        this.initialise();
     }
-
-    get systemModel(): ISystemModel{
-        return this._systemModel;
+    
+    private initialise():void {
+        let gridController: GridController = new GridController(10,10,this._systemModel.blockFactory, this._systemModel.eventHub);
+        this.systemModel.eventHub.dispatchEvent(GridEvents.InitialiseGridEvent);   
     }
-
-    private bootstrapGame(){
+    
+    private bootstrapGame():void {
+        this.bootstrapEventHub();
         this.bootstrapBlockFactory();
     }
 
-    private initialiseGrid(){
-        let gridController: GridController = new GridController(10,10,this._systemModel.blockFactory);
-        gridController.initialiseGrid();
+    private bootstrapEventHub():void {
+        let eventHub: EventHub = new EventHub();
+        this._systemModel.eventHub = eventHub;
     }
-
-    private bootstrapBlockFactory(){
+    
+    private bootstrapBlockFactory():void {
         let blockLayerGroup: Phaser.Group = this._game.add.group();
         let blockFactory: BlockFactory = new BlockFactory(this._game, blockLayerGroup)
         this._systemModel.blockFactory = blockFactory;
     }
-
+    
+    get systemModel(): ISystemModel{
+        return this._systemModel;
+    }
 }
