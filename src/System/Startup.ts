@@ -4,6 +4,8 @@ import { ISystemModel } from "./ISystemModel";
 import { GridController } from "../Grid/GridController";
 import { EventHub } from "./Events/EventHub";
 import { GridEvents } from "../Grid/GridEvents";
+import { InputController } from "../Input/InputController";
+import { GridModel } from "../Grid/GridModel";
 
 export class Startup{
     private _game: Phaser.Game;
@@ -32,7 +34,10 @@ export class Startup{
     }
     
     private bootstrapGame():void {
+        //Order is starting to become a concern here. Maaay need to rethink this in terms of categories.
         this.bootstrapEventHub();
+        this.bootstrapModels();
+        this.bootstrapInput();
         this.bootstrapBlockFactory();
     }
 
@@ -43,8 +48,17 @@ export class Startup{
     
     private bootstrapBlockFactory():void {
         let blockLayerGroup: Phaser.Group = this._game.add.group();
-        let blockFactory: BlockFactory = new BlockFactory(this._game, blockLayerGroup)
+        let blockFactory: BlockFactory = new BlockFactory(this._game, blockLayerGroup, this._systemModel.eventHub);
         this._systemModel.blockFactory = blockFactory;
+    }
+
+    private bootstrapInput():void {
+        let inputController: InputController = new InputController(this._systemModel.eventHub, this._systemModel.gridModel);
+        this._systemModel.inputController = inputController; 
+    }
+
+    private bootstrapModels(): void {
+        this._systemModel.gridModel = new GridModel(); 
     }
     
     get systemModel(): ISystemModel{

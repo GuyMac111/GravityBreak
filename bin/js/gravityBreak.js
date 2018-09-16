@@ -1,3 +1,92 @@
+define("System/Events/EventHub", ["require", "exports", "typescript-collections"], function (require, exports, typescript_collections_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class EventHub {
+        constructor() {
+            this._eventMap = new typescript_collections_1.Dictionary();
+        }
+        //First REALLY naughty thing we've done. We just have to be careful with the messages we send with our events.
+        addEventListener(eventType, handler, handleFunction) {
+            if (!this._eventMap.containsKey(eventType)) {
+                this._eventMap.setValue(eventType, new ListenersList());
+            }
+            let listenersForEvent = this._eventMap.getValue(eventType);
+            listenersForEvent.addListener(handler, handleFunction);
+        }
+        removeEventListener(eventType, handler) {
+            if (!this._eventMap.containsKey(eventType)) {
+                return;
+            }
+            else {
+                this._eventMap.getValue(eventType).removeListener(handler);
+            }
+        }
+        dispatchEvent(eventType, message) {
+            if (!this._eventMap.containsKey(eventType)) {
+                return;
+            }
+            else {
+                this._eventMap.getValue(eventType).dispatchAll(message);
+            }
+        }
+    }
+    exports.EventHub = EventHub;
+    class ListenersList {
+        constructor() {
+            this._listenerCallbackMap = new typescript_collections_1.Dictionary();
+        }
+        addListener(handler, handleFunction) {
+            this._listenerCallbackMap.setValue(handler, handleFunction);
+        }
+        removeListener(handler) {
+            if (this._listenerCallbackMap.containsKey(handler)) {
+                this._listenerCallbackMap.remove(handler);
+            }
+        }
+        dispatchAll(message) {
+            this._listenerCallbackMap.forEach((handler, handleFunction) => {
+                if (message != undefined) {
+                    handleFunction(message);
+                }
+                else {
+                    handleFunction();
+                }
+            });
+        }
+    }
+});
+define("System/Events/EventHandler", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class EventHandler {
+        constructor(injectedEventHub) {
+            this._eventHub = injectedEventHub;
+        }
+        addEventListener(eventType, onEvent) {
+            this._eventHub.addEventListener(eventType, this, onEvent);
+        }
+        removeEventListener(eventType) {
+            this._eventHub.removeEventListener(eventType, this);
+        }
+        //hmmmm....COULD move this into a child class explicitly designated 'Dispatcher' in order to truly distinguish between the two for clarity.
+        dispatchEvent(eventType, message) {
+            this._eventHub.dispatchEvent(eventType, message);
+        }
+    }
+    exports.EventHandler = EventHandler;
+});
+define("System/Mediator", ["require", "exports", "System/Events/EventHandler"], function (require, exports, EventHandler_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class Mediator extends EventHandler_1.EventHandler {
+        //Important to note: I'm calling these contructor args 'injected' just to highlight that I'd 
+        //use/create dependency injection here given more time.
+        constructor(injectedEventHub) {
+            super(injectedEventHub);
+        }
+    }
+    exports.Mediator = Mediator;
+});
 define("System/View", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -10,17 +99,6 @@ define("System/View", ["require", "exports"], function (require, exports) {
         }
     }
     exports.View = View;
-});
-define("System/Mediator", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class Mediator {
-        //Important to note: I'm calling these contructor args 'injected' just to highlight that I'd 
-        //use/create dependency injection here given more time.
-        constructor() {
-        }
-    }
-    exports.Mediator = Mediator;
 });
 define("Block/BlockColour", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -43,29 +121,52 @@ define("Block/BlockView", ["require", "exports", "System/View"], function (requi
         }
         initialise(startingCoordinates, colour) {
             this._diamondSprite = this.layerGroup.create(startingCoordinates.x, startingCoordinates.y, 'diamonds', colour);
+            this._diamondSprite.inputEnabled = true;
+            this._diamondSprite.events.onInputDown.add(this.onBlockTouched, this);
         }
         moveToPosition(destinationCoordinates, onComplete) {
             let tween = this.game.add.tween(this._diamondSprite).to({
                 x: destinationCoordinates.x,
                 y: destinationCoordinates.y
-            }, 100, Phaser.Easing.Linear.None);
+            }, 5, Phaser.Easing.Linear.None);
             if (onComplete != undefined) {
                 tween.onComplete.add(onComplete);
             }
             tween.start();
         }
+        showBlockSelected() {
+            let tween = this.game.add.tween(this._diamondSprite.scale).to({
+                x: 1.2,
+                y: 1.2
+            }, 200, Phaser.Easing.Bounce.Out);
+            tween.start();
+        }
+        onBlockTouched() {
+            if (this.onTouch != undefined) {
+                this.onTouch();
+            }
+        }
     }
     exports.BlockView = BlockView;
 });
-define("Block/BlockMediator", ["require", "exports", "System/Mediator"], function (require, exports, Mediator_1) {
+define("Block/BlockEvents", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class BlockEvents {
+    }
+    BlockEvents.BlockTouchedEvent = "BlockEvents.BlockTouched";
+    exports.BlockEvents = BlockEvents;
+});
+define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/BlockEvents"], function (require, exports, Mediator_1, BlockEvents_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class BlockMediator extends Mediator_1.Mediator {
-        constructor(startingGridPosition, colour, injectedView) {
-            super();
+        constructor(startingGridPosition, colour, injectedView, injectedEventHub) {
+            super(injectedEventHub);
             this._blockView = injectedView;
             this._blockColour = colour;
             this._blockView.initialise(this.translateGridCoordsToWorld(startingGridPosition), this._blockColour);
+            this._blockView.onTouch = this.onViewTouched.bind(this);
         }
         cascadeBlockTo(gridDestination) {
             this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.onBlockMoveComplete.bind(this));
@@ -76,8 +177,19 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator"], functio
                 this.blockMoveComplete(this);
             }
         }
+        showBlockSelected() {
+            this._blockView.showBlockSelected();
+        }
+        set currentNode(node) {
+            this._currentNode = node;
+        }
         translateGridCoordsToWorld(gridCoords) {
             return new Phaser.Point(gridCoords.x * 64, gridCoords.y * 64);
+        }
+        onViewTouched() {
+            if (this._currentNode != undefined) {
+                this.dispatchEvent(BlockEvents_1.BlockEvents.BlockTouchedEvent, this._currentNode.gridCoordinate);
+            }
         }
     }
     exports.BlockMediator = BlockMediator;
@@ -121,19 +233,19 @@ define("Grid/NodeMesh", ["require", "exports"], function (require, exports) {
     }
     exports.NodeMesh = NodeMesh;
 });
-define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescript-collections", "Grid/NodeMesh"], function (require, exports, GridNode_1, typescript_collections_1, NodeMesh_1) {
+define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescript-collections", "Grid/NodeMesh"], function (require, exports, GridNode_1, typescript_collections_2, NodeMesh_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class NodeMeshFactory {
         createNodeMesh(dimensionsInNodes) {
             this._dimensionsInNodes = dimensionsInNodes;
             this._nodeMesh = this.createUnassociatedNodeMesh(this._dimensionsInNodes);
-            this._spawnNodeMesh = new typescript_collections_1.Dictionary();
+            this._spawnNodeMesh = new typescript_collections_2.Dictionary();
             this.associateNodeMesh(this._nodeMesh);
             return new NodeMesh_1.NodeMesh(this._nodeMesh, this._spawnNodeMesh, this._dimensionsInNodes);
         }
         createUnassociatedNodeMesh(_dimensionsInNodes) {
-            let nodeMesh = new typescript_collections_1.Dictionary();
+            let nodeMesh = new typescript_collections_2.Dictionary();
             for (let i = 0; i < _dimensionsInNodes.x; i++) {
                 for (let j = 0; j < _dimensionsInNodes.y; j++) {
                     let node = new GridNode_1.GridNode(new Phaser.Point(i, j));
@@ -298,13 +410,14 @@ define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Bloc
         //with absolutely everything they need.
         //It's also going to substitute as a VERY hamfisted Dependency Injector for those classes.
         //But as it also needs an instance of game, it's also going to need to be "injected" with "game".
-        constructor(game, blockLayerGroup) {
+        constructor(game, blockLayerGroup, injectedEventHub) {
             this._game = game;
             this._blocksLayerGroup = blockLayerGroup;
+            this._eventHub = injectedEventHub;
         }
         createBlockAtPosition(startingPosition) {
             let view = this.createBlockView();
-            let mediator = new BlockMediator_1.BlockMediator(startingPosition, this.generateRandomColour(), view);
+            let mediator = new BlockMediator_1.BlockMediator(startingPosition, this.generateRandomColour(), view, this._eventHub);
             return mediator;
         }
         generateRandomColour() {
@@ -320,98 +433,23 @@ define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Bloc
     }
     exports.BlockFactory = BlockFactory;
 });
-define("System/Events/EventHub", ["require", "exports", "typescript-collections"], function (require, exports, typescript_collections_2) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class EventHub {
-        constructor() {
-            this._eventMap = new typescript_collections_2.Dictionary();
-        }
-        //First REALLY naughty thing we've done. We just have to be careful with the messages we send with our events.
-        addEventListener(eventType, handler, handleFunction) {
-            if (!this._eventMap.containsKey(eventType)) {
-                this._eventMap.setValue(eventType, new ListenersList());
-            }
-            let listenersForEvent = this._eventMap.getValue(eventType);
-            listenersForEvent.addListener(handler, handleFunction);
-        }
-        removeEventListener(eventType, handler) {
-            if (!this._eventMap.containsKey(eventType)) {
-                return;
-            }
-            else {
-                this._eventMap.getValue(eventType).removeListener(handler);
-            }
-        }
-        dispatchEvent(eventType, message) {
-            if (!this._eventMap.containsKey(eventType)) {
-                return;
-            }
-            else {
-                this._eventMap.getValue(eventType).dispatchAll(message);
-            }
-        }
-    }
-    exports.EventHub = EventHub;
-    class ListenersList {
-        constructor() {
-            this._listenerCallbackMap = new typescript_collections_2.Dictionary();
-        }
-        addListener(handler, handleFunction) {
-            this._listenerCallbackMap.setValue(handler, handleFunction);
-        }
-        removeListener(handler) {
-            if (this._listenerCallbackMap.containsKey(handler)) {
-                this._listenerCallbackMap.remove(handler);
-            }
-        }
-        dispatchAll(message) {
-            this._listenerCallbackMap.forEach((handler, handleFunction) => {
-                if (message != undefined) {
-                    handleFunction(message);
-                }
-                else {
-                    handleFunction();
-                }
-            });
-        }
-    }
-});
-define("System/Events/EventHandler", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class EventHandler {
-        constructor(injectedEventHub) {
-            this._eventHub = injectedEventHub;
-        }
-        addEventListener(eventType, onEvent) {
-            this._eventHub.addEventListener(eventType, this, onEvent);
-        }
-        removeEventListener(eventType) {
-            this._eventHub.removeEventListener(eventType, this);
-        }
-        //hmmmm....COULD move this into a child class explicitly designated 'Dispatcher' in order to truly distinguish between the two for clarity.
-        dispatchEvent(eventType, message) {
-            this._eventHub.dispatchEvent(eventType, message);
-        }
-    }
-    exports.EventHandler = EventHandler;
-});
 define("Grid/GridEvents", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class GridEvents {
     }
     GridEvents.InitialiseGridEvent = "GridEvent.InitialiseGrid";
+    GridEvents.ShowBlockSelectedEvent = "GridEvent.ShowBlockSelected";
     exports.GridEvents = GridEvents;
 });
-define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Cascade/CascadeStrategyProvider", "System/Events/EventHandler", "Grid/GridEvents"], function (require, exports, NodeMeshFactory_1, CascadeStrategyProvider_1, EventHandler_1, GridEvents_1) {
+define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Cascade/CascadeStrategyProvider", "System/Events/EventHandler", "Grid/GridEvents"], function (require, exports, NodeMeshFactory_1, CascadeStrategyProvider_1, EventHandler_2, GridEvents_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    class GridController extends EventHandler_1.EventHandler {
+    class GridController extends EventHandler_2.EventHandler {
         constructor(nodesHigh, nodesWide, injectedBlockFactory, injectedEventHub) {
             super(injectedEventHub);
             this.addEventListener(GridEvents_1.GridEvents.InitialiseGridEvent, this.onInitialiseEvent.bind(this));
+            this.addEventListener(GridEvents_1.GridEvents.ShowBlockSelectedEvent, this.onShowBlockSelectedEvent.bind(this));
             let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
             this._blockFactory = injectedBlockFactory;
             //TODO: move instantiation of NodeMeshFactory into bootstrap and 'inject'
@@ -427,15 +465,16 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
             this.spawnBlocks();
         }
         spawnBlocks() {
-            //Lets temporarliy use this func as our fall function...just for testing :)
             let cascadeStrategy = this._cascadeStrategyProvider.cascadeStrategy;
             //TODO:: hmmmm....Maybe remove this check and just check here for undefined?
             if (cascadeStrategy.shouldSpawnBlock) {
                 let spawnData = cascadeStrategy.nextSpawn;
                 let block = this._blockFactory.createBlockAtPosition(spawnData.spawnNode.gridCoordinate);
-                block.blockMoveComplete = this.onBlockSpawnComplete.bind(this);
+                block.blockMoveComplete = this.onBlockSpawnCompleteCallback.bind(this);
                 //Set the node's reference here so it can be omitted from future checks
                 spawnData.destination.currentBlock = block;
+                //Set the blockMediators ref to the destination node so that it can access its own location for input events
+                block.currentNode = spawnData.destination;
                 console.log(`GridController.spawnBlocks()::: Block move started (initial position ${spawnData.spawnNode.gridCoordinate.x},${spawnData.spawnNode.gridCoordinate.y})`);
                 block.cascadeBlockTo(spawnData.destination.gridCoordinate);
             }
@@ -444,9 +483,15 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
                 console.log("GridController.spawnBlocks()::: Our grid is fully cascaded.....supposedly.");
             }
         }
-        onBlockSpawnComplete(completedBlock) {
+        onBlockSpawnCompleteCallback(completedBlock) {
             completedBlock.blockMoveComplete = undefined;
             this.spawnBlocks();
+        }
+        onShowBlockSelectedEvent(message) {
+            if (message instanceof Phaser.Point) {
+                console.log(`GridController.onShowBlockSelectedEvent()::: Showing block ${message} as selected`);
+                this._gridNodes.nodes.getValue(message).currentBlock.showBlockSelected();
+            }
         }
     }
     exports.GridController = GridController;
@@ -455,10 +500,88 @@ define("System/ISystemModel", ["require", "exports"], function (require, exports
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
+define("Grid/GridModel", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GridModel {
+        constructor() {
+        }
+        get hasCurrentlySelectedBlock() {
+            return this._currentlySelectedCoord != undefined;
+        }
+        set currentlySelectedCoord(coord) {
+            if (this._currentlySelectedCoord == undefined) {
+                this._currentlySelectedCoord = coord;
+            }
+            else {
+                console.log("GridModel.set currentlySelectedCoord::: Something went wrong. Why are we trying to set the currSelectedCoord when there's already one?");
+            }
+        }
+        set swapCandidateCoord(coord) {
+            if (this._swapCandidateCoord == undefined) {
+                this._swapCandidateCoord = coord;
+            }
+            else {
+                console.log("GridModel.set swapCandidateCoord::: Something went wrong. Why are we trying to set the swapCandidateCoord when there's already one?");
+            }
+        }
+        get currentlySelectedCoord() {
+            return this._currentlySelectedCoord;
+        }
+        get swapCandidateCoord() {
+            return this._swapCandidateCoord;
+        }
+        resetSelectedAndSwapCoords() {
+            this._swapCandidateCoord = undefined;
+            this._currentlySelectedCoord = undefined;
+        }
+    }
+    exports.GridModel = GridModel;
+});
+define("Input/InputController", ["require", "exports", "System/Events/EventHandler", "Grid/GridEvents", "Block/BlockEvents"], function (require, exports, EventHandler_3, GridEvents_2, BlockEvents_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class InputController extends EventHandler_3.EventHandler {
+        constructor(injectedEventHub, injectedGridModel) {
+            super(injectedEventHub);
+            this._gridModel = injectedGridModel;
+            this.addEventListener(BlockEvents_2.BlockEvents.BlockTouchedEvent, this.onBlockTouched.bind(this));
+        }
+        onBlockTouched(message) {
+            if (!(message instanceof Phaser.Point)) {
+                this.printMessageIssue(message);
+            }
+            else {
+                let gridLocationOfTouch = message;
+                if (!this._gridModel.hasCurrentlySelectedBlock) {
+                    this._gridModel.currentlySelectedCoord = gridLocationOfTouch;
+                    this.dispatchEvent(GridEvents_2.GridEvents.ShowBlockSelectedEvent, gridLocationOfTouch);
+                }
+                else if (this._gridModel.swapCandidateCoord == undefined) {
+                    this._gridModel.swapCandidateCoord = gridLocationOfTouch;
+                    this.dispatchEvent(GridEvents_2.GridEvents.ShowBlockSelectedEvent, gridLocationOfTouch);
+                    //TODO::: At this point we should tell the grid to reset both blocks initiate swap.
+                    //The grid should then update the GridModel once it's down attempting to swap/possibly swapping back
+                    //Perhaps done by a grid evaluator?
+                }
+            }
+        }
+        printMessageIssue(message) {
+            console.log(`Something went wrong with message ${message}`);
+        }
+    }
+    exports.InputController = InputController;
+});
 define("System/SystemModel", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class SystemModel {
+        set gridModel(gridModel) {
+            this._gridModel = gridModel;
+        }
+        get gridModel() {
+            return this._gridModel;
+        }
         set blockFactory(blockFactory) {
             this._blockFactory = blockFactory;
         }
@@ -471,10 +594,16 @@ define("System/SystemModel", ["require", "exports"], function (require, exports)
         get eventHub() {
             return this._eventHub;
         }
+        set inputController(inputController) {
+            this._inputController = inputController;
+        }
+        get inputController() {
+            return this._inputController;
+        }
     }
     exports.SystemModel = SystemModel;
 });
-define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/SystemModel", "Grid/GridController", "System/Events/EventHub", "Grid/GridEvents"], function (require, exports, BlockFactory_1, SystemModel_1, GridController_1, EventHub_1, GridEvents_2) {
+define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/SystemModel", "Grid/GridController", "System/Events/EventHub", "Grid/GridEvents", "Input/InputController", "Grid/GridModel"], function (require, exports, BlockFactory_1, SystemModel_1, GridController_1, EventHub_1, GridEvents_3, InputController_1, GridModel_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Startup {
@@ -492,10 +621,13 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
         }
         initialise() {
             let gridController = new GridController_1.GridController(9, 9, this._systemModel.blockFactory, this._systemModel.eventHub);
-            this.systemModel.eventHub.dispatchEvent(GridEvents_2.GridEvents.InitialiseGridEvent);
+            this.systemModel.eventHub.dispatchEvent(GridEvents_3.GridEvents.InitialiseGridEvent);
         }
         bootstrapGame() {
+            //Order is starting to become a concern here. Maaay need to rethink this in terms of categories.
             this.bootstrapEventHub();
+            this.bootstrapModels();
+            this.bootstrapInput();
             this.bootstrapBlockFactory();
         }
         bootstrapEventHub() {
@@ -504,8 +636,15 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
         }
         bootstrapBlockFactory() {
             let blockLayerGroup = this._game.add.group();
-            let blockFactory = new BlockFactory_1.BlockFactory(this._game, blockLayerGroup);
+            let blockFactory = new BlockFactory_1.BlockFactory(this._game, blockLayerGroup, this._systemModel.eventHub);
             this._systemModel.blockFactory = blockFactory;
+        }
+        bootstrapInput() {
+            let inputController = new InputController_1.InputController(this._systemModel.eventHub, this._systemModel.gridModel);
+            this._systemModel.inputController = inputController;
+        }
+        bootstrapModels() {
+            this._systemModel.gridModel = new GridModel_1.GridModel();
         }
         get systemModel() {
             return this._systemModel;

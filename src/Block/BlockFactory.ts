@@ -1,23 +1,26 @@
 import { BlockMediator } from "./BlockMediator"
 import { BlockView } from "./BlockView"
 import { BlockColour } from "./BlockColour";
+import { EventHub } from "../System/Events/EventHub";
 
 export class BlockFactory{
     _game: Phaser.Game;
     _blocksLayerGroup: Phaser.Group;
+    _eventHub: EventHub;
     
     //We're going to use this starting point to setup BlockMediators and Views.
     //with absolutely everything they need.
     //It's also going to substitute as a VERY hamfisted Dependency Injector for those classes.
     //But as it also needs an instance of game, it's also going to need to be "injected" with "game".
-    constructor(game: Phaser.Game, blockLayerGroup: Phaser.Group){
+    constructor(game: Phaser.Game, blockLayerGroup: Phaser.Group, injectedEventHub: EventHub){
         this._game = game;
         this._blocksLayerGroup = blockLayerGroup;
+        this._eventHub = injectedEventHub;
     }
 
     createBlockAtPosition(startingPosition: Phaser.Point): BlockMediator {
         let view: BlockView = this.createBlockView();
-        let mediator: BlockMediator = new BlockMediator(startingPosition, this.generateRandomColour(), view) 
+        let mediator: BlockMediator = new BlockMediator(startingPosition, this.generateRandomColour(), view, this._eventHub);
         return mediator;
     }
 
