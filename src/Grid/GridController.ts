@@ -8,6 +8,11 @@ import { BlockMediator } from "../Block/BlockMediator";
 import { EventHandler } from "../System/Events/EventHandler";
 import { EventHub } from "../System/Events/EventHub";
 import { GridEvents } from "./GridEvents";
+import { GridNode } from "./GridNode";
+import { BlockEvents } from "../Block/BlockEvents";
+import { GridModel } from "./GridModel";
+import { swap } from "typescript-collections/dist/lib/arrays";
+import { SwapVO } from "./VOs/SwapVO";
 
 export class GridController extends EventHandler{
     private _gridNodes: NodeMesh;
@@ -18,6 +23,8 @@ export class GridController extends EventHandler{
         super(injectedEventHub);
         this.addEventListener(GridEvents.InitialiseGridEvent, this.onInitialiseEvent.bind(this));
         this.addEventListener(GridEvents.ShowBlockSelectedEvent, this.onShowBlockSelectedEvent.bind(this));
+        this.addEventListener(GridEvents.ShowBlockUnselectedEvent, this.onShowBlockUnselectedEvent.bind(this));
+        this.addEventListener(GridEvents.ShowBlockSwapAnimationEvent, this.onShowBlockSwapAnimationEvent.bind(this));
 
         let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
         this._blockFactory = injectedBlockFactory;
@@ -62,8 +69,47 @@ export class GridController extends EventHandler{
 
     private onShowBlockSelectedEvent(message?:any): void{
         if(message instanceof Phaser.Point){
-            console.log(`GridController.onShowBlockSelectedEvent()::: Showing block ${message} as selected`);
+            console.log(`GridController.onShowBlockSelectedEvent()::: Selecting block ${message}`);
             this._gridNodes.nodes.getValue(message).currentBlock.showBlockSelected();
         }
+    }
+
+    private onShowBlockUnselectedEvent(message?:any): void{
+        if(message instanceof Phaser.Point){
+            console.log(`GridController.onShowBlockUnselectedEvent()::: Unselecting block ${message}`);
+            this._gridNodes.nodes.getValue(message).currentBlock.showBlockUnselected();
+        }
+    }
+
+    private onShowBlockSwapAnimationEvent(message?:any): void{
+        if(message instanceof SwapVO){
+            let swapVO = message as SwapVO;
+            this.swapBlocks(swapVO.firstBlockCoord, swapVO.secondBlockCoord);
+        }
+    }
+
+    private swapBlocks(firstGridCoord: Phaser.Point, secondGridCoord: Phaser.Point): void{
+        let firstNode: GridNode = this._gridNodes.nodes.getValue(firstGridCoord);
+        let secondNode: GridNode = this._gridNodes.nodes.getValue(secondGridCoord);
+        let holdThisForASecond: BlockMediator = firstNode.currentBlock;
+        firstNode.currentBlock = secondNode.currentBlock;
+        secondNode.currentBlock = holdThisForASecond;
+        firstNode.currentBlock.currentNode = firstNode;
+        secondNode.currentBlock.currentNode = secondNode;
+        //As the nodes are now already holding their swapped values, we send the inverse and swap instruction events.
+        firstNode.currentBlock.blockMoveComplete = this.onSwapCandidateBlockMoveComplete.bind(this);
+        secondNode.currentBlock.blockMoveComplete = this.onSelectedBlockMoveComplete.bind(this);
+        firstNode.currentBlock.swapBlockTo(firstGridCoord);
+        secondNode.currentBlock.swapBlockTo(secondGridCoord);
+    }
+
+    private onSelectedBlockMoveComplete(completedBlock: BlockMediator): void{
+        completedBlock.blockMoveComplete = undefined;
+        this.dispatchEvent(GridEvents.SelectedBlockSwapAnimationCompleteEvent);
+    }
+
+    private onSwapCandidateBlockMoveComplete(completedBlock: BlockMediator): void{
+        completedBlock.blockMoveComplete = undefined;
+        this.dispatchEvent(GridEvents.SwapCandidateBlockSwapAnimationCompleteEvent);
     }
 }

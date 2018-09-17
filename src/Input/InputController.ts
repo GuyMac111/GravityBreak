@@ -20,13 +20,8 @@ export class InputController extends EventHandler{
             let gridLocationOfTouch: Phaser.Point = message;
             if(!this._gridModel.hasCurrentlySelectedBlock){
                 this._gridModel.currentlySelectedCoord = gridLocationOfTouch;
-                this.dispatchEvent(GridEvents.ShowBlockSelectedEvent, gridLocationOfTouch);
             }else if(this._gridModel.swapCandidateCoord==undefined){
                 this._gridModel.swapCandidateCoord = gridLocationOfTouch;
-                this.dispatchEvent(GridEvents.ShowBlockSelectedEvent, gridLocationOfTouch);
-                //TODO::: At this point we should tell the grid to reset both blocks initiate swap.
-                //The grid should then update the GridModel once it's down attempting to swap/possibly swapping back
-                //Perhaps done by a grid evaluator?
             }
         }
     }

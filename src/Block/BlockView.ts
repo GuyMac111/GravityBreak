@@ -2,6 +2,8 @@ import { View } from "../System/View";
 import { BlockColour } from "./BlockColour";
 
 export class BlockView extends View{
+    private readonly SELECTION_SPEED: number = 200;
+
     private _diamondSprite: Phaser.Sprite;
 
     onTouch: ()=>void;
@@ -16,11 +18,11 @@ export class BlockView extends View{
         this._diamondSprite.events.onInputDown.add(this.onBlockTouched, this);
     }
 
-    moveToPosition(destinationCoordinates: Phaser.Point, onComplete?: () => void) {
+    moveToPosition(destinationCoordinates: Phaser.Point, speed:number, onComplete?: () => void) {
         let tween:Phaser.Tween = this.game.add.tween(this._diamondSprite).to({
                 x: destinationCoordinates.x, 
                 y: destinationCoordinates.y
-            }, 5, Phaser.Easing.Linear.None);
+            }, speed, Phaser.Easing.Linear.None);
         
         if(onComplete!=undefined){
             tween.onComplete.add(onComplete);
@@ -32,8 +34,20 @@ export class BlockView extends View{
         let tween:Phaser.Tween = this.game.add.tween(this._diamondSprite.scale).to({
             x: 1.2,
             y: 1.2
-        }, 200, Phaser.Easing.Bounce.Out);
+        }, this.SELECTION_SPEED, Phaser.Easing.Bounce.Out);
         tween.start();
+    }
+
+    showBlockUnselected():void{
+        let tween:Phaser.Tween = this.game.add.tween(this._diamondSprite.scale).to({
+            x: 1,
+            y: 1
+        }, this.SELECTION_SPEED, Phaser.Easing.Bounce.Out)
+        tween.onComplete.add(function(){
+            console.log("Block unselection complete");
+        })
+        tween.start();
+        
     }
 
     private onBlockTouched(): void{

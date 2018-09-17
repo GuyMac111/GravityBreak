@@ -58,7 +58,7 @@ export class Startup{
     }
 
     private bootstrapModels(): void {
-        this._systemModel.gridModel = new GridModel(); 
+        this._systemModel.gridModel = new GridModel(this._systemModel.eventHub); 
     }
     
     get systemModel(): ISystemModel{

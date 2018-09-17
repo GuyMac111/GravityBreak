@@ -6,6 +6,8 @@ import { BlockEvents } from "./BlockEvents";
 import { GridNode } from "../Grid/GridNode";
 
 export class BlockMediator extends Mediator{
+    private readonly FALL_DURATION: number = 10;
+    private readonly SWAP_DURATION: number = 100;
     private _blockView: BlockView;
     private _blockColour: BlockColour;
     private _currentNode: GridNode;//Didn't want to do this, but it's the cleanest way for a BlockMediator to get it's own location 
@@ -21,11 +23,15 @@ export class BlockMediator extends Mediator{
     }
 
     cascadeBlockTo(gridDestination: Phaser.Point): void{
-        this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.onBlockMoveComplete.bind(this));
+        this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.FALL_DURATION,this.onBlockMoveComplete.bind(this));
+    }
+
+    swapBlockTo(gridDestination: Phaser.Point): void {
+        this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.SWAP_DURATION,this.onBlockMoveComplete.bind(this));
     }
 
     onBlockMoveComplete(): void{
-        console.log("BlockMediator.onBlockMoveComplete()::: Block completed cascading");
+        console.log("BlockMediator.onBlockMoveComplete()::: Block completed movement");
         if(this.blockMoveComplete!=null){
             this.blockMoveComplete(this);
         }
@@ -33,6 +39,10 @@ export class BlockMediator extends Mediator{
 
     showBlockSelected(): void{
         this._blockView.showBlockSelected();
+    }
+
+    showBlockUnselected(): void{
+        this._blockView.showBlockUnselected();
     }
 
     set currentNode(node: GridNode){
