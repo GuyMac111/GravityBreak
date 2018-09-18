@@ -13,6 +13,7 @@ import { BlockEvents } from "../Block/BlockEvents";
 import { GridModel } from "./GridModel";
 import { swap } from "typescript-collections/dist/lib/arrays";
 import { SwapVO } from "./VOs/SwapVO";
+import { BreakVO } from "./VOs/BreakVO";
 
 export class GridController extends EventHandler{
     private _gridNodes: NodeMesh;
@@ -25,6 +26,7 @@ export class GridController extends EventHandler{
         this.addEventListener(GridEvents.ShowBlockSelectedEvent, this.onShowBlockSelectedEvent.bind(this));
         this.addEventListener(GridEvents.ShowBlockUnselectedEvent, this.onShowBlockUnselectedEvent.bind(this));
         this.addEventListener(GridEvents.ShowBlockSwapAnimationEvent, this.onShowBlockSwapAnimationEvent.bind(this));
+        this.addEventListener(GridEvents.BreakBlocksEvent, this.onBreakBlocksEvent.bind(this));
 
         let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
         this._blockFactory = injectedBlockFactory;
@@ -60,6 +62,30 @@ export class GridController extends EventHandler{
             //Our grid should be full at this point
             console.log("GridController.spawnBlocks()::: Our grid is fully cascaded.....supposedly.");
         }
+    }
+
+    private onBreakBlocksEvent(message?: any): void{
+        let breakDelay: number = 500;
+        let breakVos:BreakVO[] = message;
+        for(let i:number = 0; i<breakVos.length;i++){
+            breakVos[i].coords.toArray().forEach((point:Phaser.Point)=>{
+                let blockMed: BlockMediator = this._gridNodes.nodes.getValue(point).currentBlock;
+                if(point === breakVos[breakVos.length-1].coords.toArray[0]){
+                    //if this is the first coord of the last set of breaks, we wanna know when it's done.
+                    blockMed.blockDestroyComplete = this.onFinalBlockDestroyComplete.bind(this);
+                    blockMed.currentNode.currentBlock = undefined;
+                    blockMed.currentNode = undefined;
+                }
+                //clean up the nodemesh and references.
+                blockMed.showBlockDestroyAnimation(i*breakDelay);
+            });
+        }
+    }
+
+    private onFinalBlockDestroyComplete(blockMediator: BlockMediator):void {
+        blockMediator.blockDestroyComplete = undefined;
+        console.log("We're done breaking for now");
+        this.dispatchEvent(GridEvents.BreakBlocksComplete);
     }
 
     private onBlockSpawnCompleteCallback(completedBlock: BlockMediator) : void{

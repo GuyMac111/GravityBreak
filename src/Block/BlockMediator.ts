@@ -13,6 +13,7 @@ export class BlockMediator extends Mediator{
     private _currentNode: GridNode;//Didn't want to do this, but it's the cleanest way for a BlockMediator to get it's own location 
 
     blockMoveComplete: (completedBlock: BlockMediator)=>void;
+    blockDestroyComplete: (completedBlock: BlockMediator)=>void;
 
     constructor(startingGridPosition: Phaser.Point, colour: BlockColour, injectedView:BlockView, injectedEventHub: EventHub){
         super(injectedEventHub);
@@ -30,7 +31,7 @@ export class BlockMediator extends Mediator{
         this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.SWAP_DURATION,this.onBlockMoveComplete.bind(this));
     }
 
-    onBlockMoveComplete(): void{
+    private onBlockMoveComplete(): void{
         console.log("BlockMediator.onBlockMoveComplete()::: Block completed movement");
         if(this.blockMoveComplete!=null){
             this.blockMoveComplete(this);
@@ -43,6 +44,18 @@ export class BlockMediator extends Mediator{
 
     showBlockUnselected(): void{
         this._blockView.showBlockUnselected();
+    }
+
+    showBlockDestroyAnimation(delay:number): void{
+        this._blockView.showBlockDestroyAnimation(delay,this.onBlockDestroyComplete.bind(this));
+    }
+
+    private onBlockDestroyComplete(): void{
+        console.log("BlockMediator.onBlockDestroyComplete()::: Block completed destroy anim");
+        this._blockView.destroySpriteInstance();
+        if(this.blockDestroyComplete!=undefined){
+            this.blockDestroyComplete(this);
+        }
     }
 
     set currentNode(node: GridNode){

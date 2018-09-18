@@ -147,10 +147,17 @@ define("Block/BlockView", ["require", "exports", "System/View"], function (requi
                 x: 1,
                 y: 1
             }, this.SELECTION_SPEED, Phaser.Easing.Bounce.Out);
-            tween.onComplete.add(function () {
-                console.log("Block unselection complete");
-            });
             tween.start();
+        }
+        showBlockDestroyAnimation(delay, onComplete) {
+            let horizTween = this.game.add.tween(this._diamondSprite.scale).to({ x: 1.5, y: 0.1 }, 250, Phaser.Easing.Elastic.Out, false, delay);
+            let vertTween = this.game.add.tween(this._diamondSprite.scale).to({ x: 0, y: 0 }, 200, Phaser.Easing.Elastic.Out, false);
+            vertTween.onComplete.add(onComplete);
+            horizTween.chain(vertTween);
+            horizTween.start();
+        }
+        destroySpriteInstance() {
+            this._diamondSprite.destroy();
         }
         onBlockTouched() {
             if (this.onTouch != undefined) {
@@ -199,6 +206,16 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
         showBlockUnselected() {
             this._blockView.showBlockUnselected();
         }
+        showBlockDestroyAnimation(delay) {
+            this._blockView.showBlockDestroyAnimation(delay, this.onBlockDestroyComplete.bind(this));
+        }
+        onBlockDestroyComplete() {
+            console.log("BlockMediator.onBlockDestroyComplete()::: Block completed destroy anim");
+            this._blockView.destroySpriteInstance();
+            if (this.blockDestroyComplete != undefined) {
+                this.blockDestroyComplete(this);
+            }
+        }
         set currentNode(node) {
             this._currentNode = node;
         }
@@ -225,8 +242,10 @@ define("Grid/GridNode", ["require", "exports"], function (require, exports) {
             this._nodeBelow = undefined;
             this._nodeLeft = undefined;
             this._nodeRight = undefined;
-            this._numTimesAboveSet = 0;
             this._gridCoordinate = new Phaser.Point(gridCoordinate.x, gridCoordinate.y);
+        }
+        releaseBlock() {
+            this.currentBlock = undefined;
         }
         get nodeAbove() {
             return this._nodeAbove;
@@ -241,10 +260,6 @@ define("Grid/GridNode", ["require", "exports"], function (require, exports) {
             return this._nodeRight;
         }
         set nodeAbove(node) {
-            if (this._numTimesAboveSet > 0) {
-                console.log(`HERE!!!!! ${this._gridCoordinate}`);
-            }
-            this._numTimesAboveSet++;
             this._nodeAbove = node;
         }
         set nodeBelow(node) {
@@ -508,6 +523,10 @@ define("Grid/GridEvents", ["require", "exports"], function (require, exports) {
     GridEvents.SwapCandidateBlockSwapAnimationCompleteEvent = "GridEvent.SwapCandidateBlockSwapAnimationComplete";
     GridEvents.BlockSwapAnimationCompleteEvent = "GridEvent.BlockSwapAnimationComplete";
     GridEvents.EvaluateGridEvent = "GridEvent.EvaluateGrid";
+    GridEvents.GridEvaluationPositiveEvent = "GridEvent.GridEvalutationPositive";
+    GridEvents.GridEvaluationNegativeEvent = "GridEvent.GridEvalutationNegative";
+    GridEvents.BreakBlocksEvent = "GridEvent.BreakBlocks";
+    GridEvents.BreakBlocksComplete = "GridEvent.BreakBlocksComplete";
     exports.GridEvents = GridEvents;
 });
 define("Grid/VOs/SwapVO", ["require", "exports"], function (require, exports) {
@@ -539,6 +558,9 @@ define("Grid/GridModel", ["require", "exports", "System/Events/EventHandler", "G
         }
         get hasCurrentlySelectedBlock() {
             return this._currentlySelectedCoord != undefined;
+        }
+        get gridEvaluationInProgress() {
+            return this._gridEvaluationInProgress;
         }
         set currentlySelectedCoord(coord) {
             if (this._currentlySelectedCoord == undefined) {
@@ -596,9 +618,10 @@ define("Grid/GridModel", ["require", "exports", "System/Events/EventHandler", "G
             }
         }
         handleBothBlockSwapAnimationsComplete(nodeMesh) {
+            this._gridEvaluationInProgress = true;
             this.resetAnimationFlags();
             this.removeBlockSwapEventListeners();
-            this._gridEvaluationInProgress = true;
+            this.addGridEvaluationEventListeners();
             this.dispatchEvent(GridEvents_1.GridEvents.BlockSwapAnimationCompleteEvent);
             this.dispatchEvent(GridEvents_1.GridEvents.EvaluateGridEvent, nodeMesh);
         }
@@ -608,16 +631,51 @@ define("Grid/GridModel", ["require", "exports", "System/Events/EventHandler", "G
         get swapCandidateCoord() {
             return this._swapCandidateCoord;
         }
-        resetAnimationFlags() {
-            this._selectedBlockSwapAnimationComplete = false;
-            this._swapCandidateBlockSwapAnimationComplete = false;
-        }
         resetSelectedAndSwapCoords() {
             this._swapCandidateCoord = undefined;
             this._currentlySelectedCoord = undefined;
         }
+        resetAnimationFlags() {
+            this._selectedBlockSwapAnimationComplete = false;
+            this._swapCandidateBlockSwapAnimationComplete = false;
+        }
+        onGridEvaluationSuccessEvent(message) {
+            this.resetAnimationFlags();
+            this.dispatchEvent(GridEvents_1.GridEvents.BreakBlocksEvent, message);
+        }
+        onGridEvaluationNegativeEvent(message) {
+            //this should be deferred until the swapback has been completed but we'll live with it
+            this._gridEvaluationInProgress = false;
+            //bogus way of checking that this evaluation is a result of a swap.
+            if (this._swapCandidateCoord != undefined && this._currentlySelectedCoord) {
+                this.removeGridEvaluationEventListeners();
+                this.dispatchEvent(GridEvents_1.GridEvents.ShowBlockSwapAnimationEvent, new SwapVO_1.SwapVO(this._currentlySelectedCoord, this.swapCandidateCoord));
+                this.resetSelectedAndSwapCoords;
+            }
+        }
+        addGridEvaluationEventListeners() {
+            this.addEventListener(GridEvents_1.GridEvents.GridEvaluationPositiveEvent, this.onGridEvaluationSuccessEvent.bind(this));
+            this.addEventListener(GridEvents_1.GridEvents.GridEvaluationNegativeEvent, this.onGridEvaluationNegativeEvent.bind(this));
+        }
+        removeGridEvaluationEventListeners() {
+            this.removeEventListener(GridEvents_1.GridEvents.GridEvaluationPositiveEvent);
+            this.removeEventListener(GridEvents_1.GridEvents.GridEvaluationNegativeEvent);
+        }
     }
     exports.GridModel = GridModel;
+});
+define("Grid/VOs/BreakVO", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class BreakVO {
+        constructor(coords) {
+            this._coords = coords;
+        }
+        get coords() {
+            return this._coords;
+        }
+    }
+    exports.BreakVO = BreakVO;
 });
 define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Cascade/CascadeStrategyProvider", "System/Events/EventHandler", "Grid/GridEvents", "Grid/VOs/SwapVO"], function (require, exports, NodeMeshFactory_1, CascadeStrategyProvider_1, EventHandler_3, GridEvents_2, SwapVO_2) {
     "use strict";
@@ -629,6 +687,7 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
             this.addEventListener(GridEvents_2.GridEvents.ShowBlockSelectedEvent, this.onShowBlockSelectedEvent.bind(this));
             this.addEventListener(GridEvents_2.GridEvents.ShowBlockUnselectedEvent, this.onShowBlockUnselectedEvent.bind(this));
             this.addEventListener(GridEvents_2.GridEvents.ShowBlockSwapAnimationEvent, this.onShowBlockSwapAnimationEvent.bind(this));
+            this.addEventListener(GridEvents_2.GridEvents.BreakBlocksEvent, this.onBreakBlocksEvent.bind(this));
             let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
             this._blockFactory = injectedBlockFactory;
             //TODO: move instantiation of NodeMeshFactory into bootstrap and 'inject'
@@ -661,6 +720,28 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
                 //Our grid should be full at this point
                 console.log("GridController.spawnBlocks()::: Our grid is fully cascaded.....supposedly.");
             }
+        }
+        onBreakBlocksEvent(message) {
+            let breakDelay = 500;
+            let breakVos = message;
+            for (let i = 0; i < breakVos.length; i++) {
+                breakVos[i].coords.toArray().forEach((point) => {
+                    let blockMed = this._gridNodes.nodes.getValue(point).currentBlock;
+                    if (point === breakVos[breakVos.length - 1].coords.toArray[0]) {
+                        //if this is the first coord of the last set of breaks, we wanna know when it's done.
+                        blockMed.blockDestroyComplete = this.onFinalBlockDestroyComplete.bind(this);
+                        blockMed.currentNode.currentBlock = undefined;
+                        blockMed.currentNode = undefined;
+                    }
+                    //clean up the nodemesh and references.
+                    blockMed.showBlockDestroyAnimation(i * breakDelay);
+                });
+            }
+        }
+        onFinalBlockDestroyComplete(blockMediator) {
+            blockMediator.blockDestroyComplete = undefined;
+            console.log("We're done breaking for now");
+            this.dispatchEvent(GridEvents_2.GridEvents.BreakBlocksComplete);
         }
         onBlockSpawnCompleteCallback(completedBlock) {
             completedBlock.blockMoveComplete = undefined;
@@ -725,6 +806,10 @@ define("Input/InputController", ["require", "exports", "System/Events/EventHandl
                 this.printMessageIssue(message);
             }
             else {
+                if (this._gridModel.gridEvaluationInProgress) {
+                    //Bad, I know. Using this flag as a caveman state. Preventing touch in illegal states.
+                    return;
+                }
                 let gridLocationOfTouch = message;
                 if (!this._gridModel.hasCurrentlySelectedBlock) {
                     this._gridModel.currentlySelectedCoord = gridLocationOfTouch;
@@ -739,19 +824,6 @@ define("Input/InputController", ["require", "exports", "System/Events/EventHandl
         }
     }
     exports.InputController = InputController;
-});
-define("Grid/VOs/BreakVO", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class BreakVO {
-        constructor(coords) {
-            this._coords = coords;
-        }
-        get coords() {
-            return this._coords;
-        }
-    }
-    exports.BreakVO = BreakVO;
 });
 define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/BreakVO", "typescript-collections", "System/Events/EventHandler", "Grid/GridEvents"], function (require, exports, NodeMesh_2, BreakVO_1, typescript_collections_3, EventHandler_5, GridEvents_3) {
     "use strict";
@@ -773,10 +845,10 @@ define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/B
                 this.evaluateNode(node, breakVOs);
             });
             if (breakVOs.length > 0) {
-                console.log("GridEvaluator::: WE GOT BREAKS");
+                this.dispatchEvent(GridEvents_3.GridEvents.GridEvaluationPositiveEvent, breakVOs);
             }
             else {
-                console.log("GridEvaluator::: NO BREAKS");
+                this.dispatchEvent(GridEvents_3.GridEvents.GridEvaluationNegativeEvent);
             }
         }
         evaluateNode(gridNode, breakVOs) {
@@ -819,6 +891,7 @@ define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/B
                     return;
                 }
             }
+            //if not we just push this into the collection of vo's
             breakVos.push(voToAdd);
         }
         breakVOsIntersect(first, second) {

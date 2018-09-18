@@ -27,9 +27,9 @@ export class GridEvaluator extends EventHandler{
             this.evaluateNode(node, breakVOs);
         });
         if(breakVOs.length>0){
-            console.log("GridEvaluator::: WE GOT BREAKS")
+            this.dispatchEvent(GridEvents.GridEvaluationPositiveEvent, breakVOs)
         }else{
-            console.log("GridEvaluator::: NO BREAKS")
+            this.dispatchEvent(GridEvents.GridEvaluationNegativeEvent);
         }
     }
 
@@ -77,6 +77,7 @@ export class GridEvaluator extends EventHandler{
                 return;
             }
         }
+        //if not we just push this into the collection of vo's
         breakVos.push(voToAdd);
     }
 

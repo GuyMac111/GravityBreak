@@ -9,10 +9,12 @@ export class GridNode{
     private _nodeLeft: GridNode = undefined;
     private _nodeRight: GridNode = undefined;
 
-    private _numTimesAboveSet:number = 0;
-
     constructor(gridCoordinate: Phaser.Point){
         this._gridCoordinate = new Phaser.Point(gridCoordinate.x,gridCoordinate.y);
+    }
+
+    releaseBlock(): void {
+        this.currentBlock = undefined;
     }
 
     get nodeAbove(): GridNode{
@@ -32,10 +34,6 @@ export class GridNode{
     }
 
     set nodeAbove(node: GridNode){
-        if(this._numTimesAboveSet>0){
-            console.log(`HERE!!!!! ${this._gridCoordinate}`);
-        }
-        this._numTimesAboveSet++;
         this._nodeAbove = node;
     }
     set nodeBelow(node: GridNode){

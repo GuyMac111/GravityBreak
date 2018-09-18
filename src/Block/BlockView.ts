@@ -1,5 +1,6 @@
 import { View } from "../System/View";
 import { BlockColour } from "./BlockColour";
+import { Easing } from "phaser";
 
 export class BlockView extends View{
     private readonly SELECTION_SPEED: number = 200;
@@ -43,11 +44,19 @@ export class BlockView extends View{
             x: 1,
             y: 1
         }, this.SELECTION_SPEED, Phaser.Easing.Bounce.Out)
-        tween.onComplete.add(function(){
-            console.log("Block unselection complete");
-        })
         tween.start();
-        
+    }
+
+    showBlockDestroyAnimation(delay:number, onComplete?:() => void){
+        let horizTween:Phaser.Tween = this.game.add.tween(this._diamondSprite.scale).to({x:1.5,y:0.1},250, Phaser.Easing.Elastic.Out,false,delay);
+        let vertTween:Phaser.Tween = this.game.add.tween(this._diamondSprite.scale).to({x:0,y:0},200, Phaser.Easing.Elastic.Out,false);
+        vertTween.onComplete.add(onComplete);
+        horizTween.chain(vertTween);
+        horizTween.start();
+    }
+
+    destroySpriteInstance():void{
+        this._diamondSprite.destroy();
     }
 
     private onBlockTouched(): void{

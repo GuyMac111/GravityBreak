@@ -20,6 +20,10 @@ export class GridModel extends EventHandler{
         return this._currentlySelectedCoord != undefined;
     }
 
+    get gridEvaluationInProgress(): boolean {
+        return this._gridEvaluationInProgress;
+    }
+
     set currentlySelectedCoord(coord: Phaser.Point){
         if(this._currentlySelectedCoord==undefined){
             this._currentlySelectedCoord = coord;
@@ -81,9 +85,10 @@ export class GridModel extends EventHandler{
     }
 
     private handleBothBlockSwapAnimationsComplete(nodeMesh: NodeMesh): void{
+        this._gridEvaluationInProgress = true;
         this.resetAnimationFlags();
         this.removeBlockSwapEventListeners();
-        this._gridEvaluationInProgress = true;
+        this.addGridEvaluationEventListeners();
         this.dispatchEvent(GridEvents.BlockSwapAnimationCompleteEvent);
         this.dispatchEvent(GridEvents.EvaluateGridEvent, nodeMesh);
     }
@@ -96,13 +101,40 @@ export class GridModel extends EventHandler{
         return this._swapCandidateCoord;
     }
 
+    
+    resetSelectedAndSwapCoords(): void{
+        this._swapCandidateCoord = undefined;
+        this._currentlySelectedCoord = undefined;
+    }
+    
     private resetAnimationFlags(): void{
         this._selectedBlockSwapAnimationComplete = false;
         this._swapCandidateBlockSwapAnimationComplete = false;
     }
 
-    resetSelectedAndSwapCoords(): void{
-        this._swapCandidateCoord = undefined;
-        this._currentlySelectedCoord = undefined;
+    private onGridEvaluationSuccessEvent(message?:any): void {
+        this.resetAnimationFlags();
+        this.dispatchEvent(GridEvents.BreakBlocksEvent, message);
+    }
+
+    private onGridEvaluationNegativeEvent(message?:any): void {
+        //this should be deferred until the swapback has been completed but we'll live with it
+        this._gridEvaluationInProgress = false;
+        //bogus way of checking that this evaluation is a result of a swap.
+        if(this._swapCandidateCoord!=undefined && this._currentlySelectedCoord){
+            this.removeGridEvaluationEventListeners();
+            this.dispatchEvent(GridEvents.ShowBlockSwapAnimationEvent, new SwapVO(this._currentlySelectedCoord, this.swapCandidateCoord));
+            this.resetSelectedAndSwapCoords;
+        }
+    }
+
+    private addGridEvaluationEventListeners(): void{
+        this.addEventListener(GridEvents.GridEvaluationPositiveEvent, this.onGridEvaluationSuccessEvent.bind(this));
+        this.addEventListener(GridEvents.GridEvaluationNegativeEvent, this.onGridEvaluationNegativeEvent.bind(this));
+    }
+
+    private removeGridEvaluationEventListeners(): void{
+        this.removeEventListener(GridEvents.GridEvaluationPositiveEvent);
+        this.removeEventListener(GridEvents.GridEvaluationNegativeEvent);
     }
 }

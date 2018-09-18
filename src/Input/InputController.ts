@@ -17,6 +17,10 @@ export class InputController extends EventHandler{
         if(!(message instanceof Phaser.Point)){
             this.printMessageIssue(message);
         }else{
+            if(this._gridModel.gridEvaluationInProgress){
+                //Bad, I know. Using this flag as a caveman state. Preventing touch in illegal states.
+                return;
+            }
             let gridLocationOfTouch: Phaser.Point = message;
             if(!this._gridModel.hasCurrentlySelectedBlock){
                 this._gridModel.currentlySelectedCoord = gridLocationOfTouch;
