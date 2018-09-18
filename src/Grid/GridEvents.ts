@@ -6,4 +6,5 @@ export class GridEvents{
     static SelectedBlockSwapAnimationCompleteEvent: string = "GridEvent.SelectedBlockSwapAnimationComplete";
     static SwapCandidateBlockSwapAnimationCompleteEvent: string = "GridEvent.SwapCandidateBlockSwapAnimationComplete";
     static BlockSwapAnimationCompleteEvent: string = "GridEvent.BlockSwapAnimationComplete";
+    static EvaluateGridEvent: string = "GridEvent.EvaluateGrid";
 }

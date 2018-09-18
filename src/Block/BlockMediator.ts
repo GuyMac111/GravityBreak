@@ -49,6 +49,10 @@ export class BlockMediator extends Mediator{
         this._currentNode = node;
     }
 
+    get blockColour(): BlockColour{
+        return this._blockColour;
+    }
+
     private translateGridCoordsToWorld(gridCoords: Phaser.Point): Phaser.Point{
         return new Phaser.Point(gridCoords.x*64, gridCoords.y*64);
     }

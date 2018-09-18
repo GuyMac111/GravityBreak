@@ -6,6 +6,7 @@ import { EventHub } from "./Events/EventHub";
 import { GridEvents } from "../Grid/GridEvents";
 import { InputController } from "../Input/InputController";
 import { GridModel } from "../Grid/GridModel";
+import { GridEvaluator } from "../Grid/GridEvaluator";
 
 export class Startup{
     private _game: Phaser.Game;
@@ -29,7 +30,6 @@ export class Startup{
     }
     
     private initialise():void {
-        let gridController: GridController = new GridController(9,9,this._systemModel.blockFactory, this._systemModel.eventHub);
         this.systemModel.eventHub.dispatchEvent(GridEvents.InitialiseGridEvent);   
     }
     
@@ -39,6 +39,7 @@ export class Startup{
         this.bootstrapModels();
         this.bootstrapInput();
         this.bootstrapBlockFactory();
+        this.bootstrapGrid();
     }
 
     private bootstrapEventHub():void {
@@ -60,7 +61,14 @@ export class Startup{
     private bootstrapModels(): void {
         this._systemModel.gridModel = new GridModel(this._systemModel.eventHub); 
     }
-    
+
+    private bootstrapGrid(): void{
+        let gridEvaluator:GridEvaluator = new GridEvaluator(this._systemModel.eventHub);
+        this._systemModel.gridEvaluator = gridEvaluator;
+        let gridController: GridController = new GridController(9,9,this._systemModel.blockFactory, this._systemModel.eventHub);
+        this._systemModel.gridController = gridController;
+    }
+
     get systemModel(): ISystemModel{
         return this._systemModel;
     }

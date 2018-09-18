@@ -118,17 +118,18 @@ define("Block/BlockView", ["require", "exports", "System/View"], function (requi
     class BlockView extends View_1.View {
         constructor(injectedGame, layerGroup) {
             super(injectedGame, layerGroup);
+            this.SELECTION_SPEED = 200;
         }
         initialise(startingCoordinates, colour) {
             this._diamondSprite = this.layerGroup.create(startingCoordinates.x, startingCoordinates.y, 'diamonds', colour);
             this._diamondSprite.inputEnabled = true;
             this._diamondSprite.events.onInputDown.add(this.onBlockTouched, this);
         }
-        moveToPosition(destinationCoordinates, onComplete) {
+        moveToPosition(destinationCoordinates, speed, onComplete) {
             let tween = this.game.add.tween(this._diamondSprite).to({
                 x: destinationCoordinates.x,
                 y: destinationCoordinates.y
-            }, 5, Phaser.Easing.Linear.None);
+            }, speed, Phaser.Easing.Linear.None);
             if (onComplete != undefined) {
                 tween.onComplete.add(onComplete);
             }
@@ -138,7 +139,17 @@ define("Block/BlockView", ["require", "exports", "System/View"], function (requi
             let tween = this.game.add.tween(this._diamondSprite.scale).to({
                 x: 1.2,
                 y: 1.2
-            }, 200, Phaser.Easing.Bounce.Out);
+            }, this.SELECTION_SPEED, Phaser.Easing.Bounce.Out);
+            tween.start();
+        }
+        showBlockUnselected() {
+            let tween = this.game.add.tween(this._diamondSprite.scale).to({
+                x: 1,
+                y: 1
+            }, this.SELECTION_SPEED, Phaser.Easing.Bounce.Out);
+            tween.onComplete.add(function () {
+                console.log("Block unselection complete");
+            });
             tween.start();
         }
         onBlockTouched() {
@@ -163,16 +174,21 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
     class BlockMediator extends Mediator_1.Mediator {
         constructor(startingGridPosition, colour, injectedView, injectedEventHub) {
             super(injectedEventHub);
+            this.FALL_DURATION = 10;
+            this.SWAP_DURATION = 100;
             this._blockView = injectedView;
             this._blockColour = colour;
             this._blockView.initialise(this.translateGridCoordsToWorld(startingGridPosition), this._blockColour);
             this._blockView.onTouch = this.onViewTouched.bind(this);
         }
         cascadeBlockTo(gridDestination) {
-            this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.onBlockMoveComplete.bind(this));
+            this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.FALL_DURATION, this.onBlockMoveComplete.bind(this));
+        }
+        swapBlockTo(gridDestination) {
+            this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.SWAP_DURATION, this.onBlockMoveComplete.bind(this));
         }
         onBlockMoveComplete() {
-            console.log("BlockMediator.onBlockMoveComplete()::: Block completed cascading");
+            console.log("BlockMediator.onBlockMoveComplete()::: Block completed movement");
             if (this.blockMoveComplete != null) {
                 this.blockMoveComplete(this);
             }
@@ -180,8 +196,14 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
         showBlockSelected() {
             this._blockView.showBlockSelected();
         }
+        showBlockUnselected() {
+            this._blockView.showBlockUnselected();
+        }
         set currentNode(node) {
             this._currentNode = node;
+        }
+        get blockColour() {
+            return this._blockColour;
         }
         translateGridCoordsToWorld(gridCoords) {
             return new Phaser.Point(gridCoords.x * 64, gridCoords.y * 64);
@@ -440,16 +462,133 @@ define("Grid/GridEvents", ["require", "exports"], function (require, exports) {
     }
     GridEvents.InitialiseGridEvent = "GridEvent.InitialiseGrid";
     GridEvents.ShowBlockSelectedEvent = "GridEvent.ShowBlockSelected";
+    GridEvents.ShowBlockUnselectedEvent = "GridEvent.ShowBlockUnselected";
+    GridEvents.ShowBlockSwapAnimationEvent = "GridEvent.ShowBlockSwapAnimation";
+    GridEvents.SelectedBlockSwapAnimationCompleteEvent = "GridEvent.SelectedBlockSwapAnimationComplete";
+    GridEvents.SwapCandidateBlockSwapAnimationCompleteEvent = "GridEvent.SwapCandidateBlockSwapAnimationComplete";
+    GridEvents.BlockSwapAnimationCompleteEvent = "GridEvent.BlockSwapAnimationComplete";
+    GridEvents.EvaluateGridEvent = "GridEvent.EvaluateGrid";
     exports.GridEvents = GridEvents;
 });
-define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Cascade/CascadeStrategyProvider", "System/Events/EventHandler", "Grid/GridEvents"], function (require, exports, NodeMeshFactory_1, CascadeStrategyProvider_1, EventHandler_2, GridEvents_1) {
+define("Grid/VOs/SwapVO", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    class GridController extends EventHandler_2.EventHandler {
+    class SwapVO {
+        constructor(firstBlockCoord, secondBlockCoord) {
+            this._firstBlockCoord = firstBlockCoord;
+            this._secondBlockCoord = secondBlockCoord;
+        }
+        get firstBlockCoord() {
+            return this._firstBlockCoord;
+        }
+        get secondBlockCoord() {
+            return this._secondBlockCoord;
+        }
+    }
+    exports.SwapVO = SwapVO;
+});
+define("Grid/GridModel", ["require", "exports", "System/Events/EventHandler", "Grid/GridEvents", "Grid/VOs/SwapVO"], function (require, exports, EventHandler_2, GridEvents_1, SwapVO_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GridModel extends EventHandler_2.EventHandler {
+        constructor(injectedEventHub) {
+            super(injectedEventHub);
+            this._selectedBlockSwapAnimationComplete = false;
+            this._swapCandidateBlockSwapAnimationComplete = false;
+            this._gridEvaluationInProgress = false;
+        }
+        get hasCurrentlySelectedBlock() {
+            return this._currentlySelectedCoord != undefined;
+        }
+        set currentlySelectedCoord(coord) {
+            if (this._currentlySelectedCoord == undefined) {
+                this._currentlySelectedCoord = coord;
+                this.dispatchEvent(GridEvents_1.GridEvents.ShowBlockSelectedEvent, this._currentlySelectedCoord);
+            }
+            else {
+                console.log("GridModel.set currentlySelectedCoord::: Something went wrong. Why are we trying to set the currSelectedCoord when there's already one?");
+            }
+        }
+        //Too much responsibility in here
+        set swapCandidateCoord(coord) {
+            if (this._swapCandidateCoord == undefined && coord != this._currentlySelectedCoord && this.blockIsLegalSwapCandidate(coord)) {
+                this._swapCandidateCoord = coord;
+                let payload = new SwapVO_1.SwapVO(this._currentlySelectedCoord, this._swapCandidateCoord);
+                this.addBlockSwapEventListeners();
+                this.dispatchEvent(GridEvents_1.GridEvents.ShowBlockUnselectedEvent, this._currentlySelectedCoord);
+                this.dispatchEvent(GridEvents_1.GridEvents.ShowBlockSwapAnimationEvent, payload);
+            }
+            else {
+                console.log("GridModel.set swapCandidateCoord::: Something went wrong. Why are we trying to set the swapCandidateCoord when there's already one?");
+            }
+        }
+        blockIsLegalSwapCandidate(swapCandidateCoord) {
+            if (swapCandidateCoord.x == this._currentlySelectedCoord.x) {
+                if (swapCandidateCoord.y == this._currentlySelectedCoord.y + 1 || swapCandidateCoord.y == this._currentlySelectedCoord.y - 1) {
+                    return true;
+                }
+            }
+            if (swapCandidateCoord.y == this._currentlySelectedCoord.y) {
+                if (swapCandidateCoord.x == this._currentlySelectedCoord.x + 1 || swapCandidateCoord.x == this._currentlySelectedCoord.x - 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        addBlockSwapEventListeners() {
+            this.addEventListener(GridEvents_1.GridEvents.SelectedBlockSwapAnimationCompleteEvent, this.onSelectedBlockSwapComplete.bind(this));
+            this.addEventListener(GridEvents_1.GridEvents.SwapCandidateBlockSwapAnimationCompleteEvent, this.onSwapCandidateBlockSwapComplete.bind(this));
+        }
+        removeBlockSwapEventListeners() {
+            this.removeEventListener(GridEvents_1.GridEvents.SelectedBlockSwapAnimationCompleteEvent);
+            this.removeEventListener(GridEvents_1.GridEvents.SwapCandidateBlockSwapAnimationCompleteEvent);
+        }
+        onSelectedBlockSwapComplete(message) {
+            this._selectedBlockSwapAnimationComplete = true;
+            if (this._swapCandidateBlockSwapAnimationComplete && this._selectedBlockSwapAnimationComplete) {
+                this.handleBothBlockSwapAnimationsComplete(message);
+            }
+        }
+        onSwapCandidateBlockSwapComplete(message) {
+            this._swapCandidateBlockSwapAnimationComplete = true;
+            if (this._selectedBlockSwapAnimationComplete && this._swapCandidateBlockSwapAnimationComplete) {
+                this.handleBothBlockSwapAnimationsComplete(message);
+            }
+        }
+        handleBothBlockSwapAnimationsComplete(nodeMesh) {
+            this.resetAnimationFlags();
+            this.removeBlockSwapEventListeners();
+            this._gridEvaluationInProgress = true;
+            this.dispatchEvent(GridEvents_1.GridEvents.BlockSwapAnimationCompleteEvent);
+            this.dispatchEvent(GridEvents_1.GridEvents.EvaluateGridEvent, nodeMesh);
+        }
+        get currentlySelectedCoord() {
+            return this._currentlySelectedCoord;
+        }
+        get swapCandidateCoord() {
+            return this._swapCandidateCoord;
+        }
+        resetAnimationFlags() {
+            this._selectedBlockSwapAnimationComplete = false;
+            this._swapCandidateBlockSwapAnimationComplete = false;
+        }
+        resetSelectedAndSwapCoords() {
+            this._swapCandidateCoord = undefined;
+            this._currentlySelectedCoord = undefined;
+        }
+    }
+    exports.GridModel = GridModel;
+});
+define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Cascade/CascadeStrategyProvider", "System/Events/EventHandler", "Grid/GridEvents", "Grid/VOs/SwapVO"], function (require, exports, NodeMeshFactory_1, CascadeStrategyProvider_1, EventHandler_3, GridEvents_2, SwapVO_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GridController extends EventHandler_3.EventHandler {
         constructor(nodesHigh, nodesWide, injectedBlockFactory, injectedEventHub) {
             super(injectedEventHub);
-            this.addEventListener(GridEvents_1.GridEvents.InitialiseGridEvent, this.onInitialiseEvent.bind(this));
-            this.addEventListener(GridEvents_1.GridEvents.ShowBlockSelectedEvent, this.onShowBlockSelectedEvent.bind(this));
+            this.addEventListener(GridEvents_2.GridEvents.InitialiseGridEvent, this.onInitialiseEvent.bind(this));
+            this.addEventListener(GridEvents_2.GridEvents.ShowBlockSelectedEvent, this.onShowBlockSelectedEvent.bind(this));
+            this.addEventListener(GridEvents_2.GridEvents.ShowBlockUnselectedEvent, this.onShowBlockUnselectedEvent.bind(this));
+            this.addEventListener(GridEvents_2.GridEvents.ShowBlockSwapAnimationEvent, this.onShowBlockSwapAnimationEvent.bind(this));
             let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
             this._blockFactory = injectedBlockFactory;
             //TODO: move instantiation of NodeMeshFactory into bootstrap and 'inject'
@@ -489,59 +628,53 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
         }
         onShowBlockSelectedEvent(message) {
             if (message instanceof Phaser.Point) {
-                console.log(`GridController.onShowBlockSelectedEvent()::: Showing block ${message} as selected`);
+                console.log(`GridController.onShowBlockSelectedEvent()::: Selecting block ${message}`);
                 this._gridNodes.nodes.getValue(message).currentBlock.showBlockSelected();
             }
+        }
+        onShowBlockUnselectedEvent(message) {
+            if (message instanceof Phaser.Point) {
+                console.log(`GridController.onShowBlockUnselectedEvent()::: Unselecting block ${message}`);
+                this._gridNodes.nodes.getValue(message).currentBlock.showBlockUnselected();
+            }
+        }
+        onShowBlockSwapAnimationEvent(message) {
+            if (message instanceof SwapVO_2.SwapVO) {
+                let swapVO = message;
+                this.swapBlocks(swapVO.firstBlockCoord, swapVO.secondBlockCoord);
+            }
+        }
+        swapBlocks(firstGridCoord, secondGridCoord) {
+            let firstNode = this._gridNodes.nodes.getValue(firstGridCoord);
+            let secondNode = this._gridNodes.nodes.getValue(secondGridCoord);
+            let holdThisForASecond = firstNode.currentBlock;
+            firstNode.currentBlock = secondNode.currentBlock;
+            secondNode.currentBlock = holdThisForASecond;
+            firstNode.currentBlock.currentNode = firstNode;
+            secondNode.currentBlock.currentNode = secondNode;
+            //As the nodes are now already holding their swapped values, we send the inverse and swap instruction events.
+            firstNode.currentBlock.blockMoveComplete = this.onSwapCandidateBlockMoveComplete.bind(this);
+            secondNode.currentBlock.blockMoveComplete = this.onSelectedBlockMoveComplete.bind(this);
+            firstNode.currentBlock.swapBlockTo(firstGridCoord);
+            secondNode.currentBlock.swapBlockTo(secondGridCoord);
+        }
+        onSelectedBlockMoveComplete(completedBlock) {
+            completedBlock.blockMoveComplete = undefined;
+            //This is bad. We shouldnt really be passing the nodemesh around as a payload but we're running low on time.
+            this.dispatchEvent(GridEvents_2.GridEvents.SelectedBlockSwapAnimationCompleteEvent, this._gridNodes);
+        }
+        onSwapCandidateBlockMoveComplete(completedBlock) {
+            completedBlock.blockMoveComplete = undefined;
+            //This is bad. We shouldnt really be passing the nodemesh around as a payload but we're running low on time.
+            this.dispatchEvent(GridEvents_2.GridEvents.SwapCandidateBlockSwapAnimationCompleteEvent, this._gridNodes);
         }
     }
     exports.GridController = GridController;
 });
-define("System/ISystemModel", ["require", "exports"], function (require, exports) {
+define("Input/InputController", ["require", "exports", "System/Events/EventHandler", "Block/BlockEvents"], function (require, exports, EventHandler_4, BlockEvents_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-});
-define("Grid/GridModel", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class GridModel {
-        constructor() {
-        }
-        get hasCurrentlySelectedBlock() {
-            return this._currentlySelectedCoord != undefined;
-        }
-        set currentlySelectedCoord(coord) {
-            if (this._currentlySelectedCoord == undefined) {
-                this._currentlySelectedCoord = coord;
-            }
-            else {
-                console.log("GridModel.set currentlySelectedCoord::: Something went wrong. Why are we trying to set the currSelectedCoord when there's already one?");
-            }
-        }
-        set swapCandidateCoord(coord) {
-            if (this._swapCandidateCoord == undefined) {
-                this._swapCandidateCoord = coord;
-            }
-            else {
-                console.log("GridModel.set swapCandidateCoord::: Something went wrong. Why are we trying to set the swapCandidateCoord when there's already one?");
-            }
-        }
-        get currentlySelectedCoord() {
-            return this._currentlySelectedCoord;
-        }
-        get swapCandidateCoord() {
-            return this._swapCandidateCoord;
-        }
-        resetSelectedAndSwapCoords() {
-            this._swapCandidateCoord = undefined;
-            this._currentlySelectedCoord = undefined;
-        }
-    }
-    exports.GridModel = GridModel;
-});
-define("Input/InputController", ["require", "exports", "System/Events/EventHandler", "Grid/GridEvents", "Block/BlockEvents"], function (require, exports, EventHandler_3, GridEvents_2, BlockEvents_2) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class InputController extends EventHandler_3.EventHandler {
+    class InputController extends EventHandler_4.EventHandler {
         constructor(injectedEventHub, injectedGridModel) {
             super(injectedEventHub);
             this._gridModel = injectedGridModel;
@@ -555,14 +688,9 @@ define("Input/InputController", ["require", "exports", "System/Events/EventHandl
                 let gridLocationOfTouch = message;
                 if (!this._gridModel.hasCurrentlySelectedBlock) {
                     this._gridModel.currentlySelectedCoord = gridLocationOfTouch;
-                    this.dispatchEvent(GridEvents_2.GridEvents.ShowBlockSelectedEvent, gridLocationOfTouch);
                 }
                 else if (this._gridModel.swapCandidateCoord == undefined) {
                     this._gridModel.swapCandidateCoord = gridLocationOfTouch;
-                    this.dispatchEvent(GridEvents_2.GridEvents.ShowBlockSelectedEvent, gridLocationOfTouch);
-                    //TODO::: At this point we should tell the grid to reset both blocks initiate swap.
-                    //The grid should then update the GridModel once it's down attempting to swap/possibly swapping back
-                    //Perhaps done by a grid evaluator?
                 }
             }
         }
@@ -571,6 +699,176 @@ define("Input/InputController", ["require", "exports", "System/Events/EventHandl
         }
     }
     exports.InputController = InputController;
+});
+define("Grid/VOs/BreakVO", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class BreakVO {
+        constructor(coords) {
+            this._coords = coords;
+        }
+        get coords() {
+            return this._coords;
+        }
+    }
+    exports.BreakVO = BreakVO;
+});
+define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/BreakVO", "typescript-collections", "System/Events/EventHandler", "Grid/GridEvents"], function (require, exports, NodeMesh_2, BreakVO_1, typescript_collections_3, EventHandler_5, GridEvents_3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GridEvaluator extends EventHandler_5.EventHandler {
+        constructor(injectedEventHub) {
+            super(injectedEventHub);
+            this.addEventListener(GridEvents_3.GridEvents.EvaluateGridEvent, this.onEvaluateGridEvent.bind(this));
+        }
+        onEvaluateGridEvent(message) {
+            if (message instanceof NodeMesh_2.NodeMesh) {
+                this.evaluateGrid(message);
+            }
+        }
+        evaluateGrid(nodeMesh) {
+            let breakVOs = [];
+            let nodeMeshToEvaluate = nodeMesh;
+            nodeMeshToEvaluate.nodes.forEach((point, node) => {
+                this.evaluateNode(node, breakVOs);
+            });
+            if (breakVOs.length > 0) {
+                console.log("GridEvaluator::: WE GOT BREAKS");
+            }
+            else {
+                console.log("GridEvaluator::: NO BREAKS");
+            }
+        }
+        evaluateNode(gridNode, breakVOs) {
+            if (this.nodeExistsInExistingBreak(gridNode, breakVOs)) {
+                return;
+            }
+            let totalVerticalBreak = this.searchAboveNode(gridNode.nodeAbove, [gridNode]).concat(this.searchBelowNode(gridNode.nodeBelow, [gridNode]));
+            let totalHorizontalBreak = this.searchLeftNode(gridNode.nodeLeft, [gridNode]).concat(this.searchRightNode(gridNode.nodeRight, [gridNode]));
+            let set = new typescript_collections_3.Set();
+            //substract 1 in the length check because their WILL be 1 duplicate in the array
+            if (totalHorizontalBreak.length >= 3) {
+                totalHorizontalBreak.forEach(element => {
+                    set.add(element.gridCoordinate);
+                });
+            }
+            if (totalVerticalBreak.length >= 3) {
+                totalVerticalBreak.forEach(element => {
+                    set.add(element.gridCoordinate);
+                });
+            }
+            if (set.size() > 0) {
+                breakVOs.push(new BreakVO_1.BreakVO(set.toArray()));
+            }
+            //subtract 1 because the original node will be a duplicate
+        }
+        nodeExistsInExistingBreak(gridNode, breakVOs) {
+            for (let i = 0; i < breakVOs.length; i++) {
+                if (breakVOs[i].coords.indexOf(gridNode.gridCoordinate) > -1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        searchAboveNode(matchGridNode, matchedSoFar) {
+            if (matchGridNode == undefined || !matchGridNode.isOccupied) {
+                //if this node is unoccupied return what we've got so far.
+                return matchedSoFar;
+            }
+            if (matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour) {
+                //if this node matches so far, add it.
+                matchedSoFar.push(matchGridNode);
+            }
+            else {
+                //if this node doesn't match, this chain is over.
+                return matchedSoFar;
+            }
+            if (matchGridNode.nodeAbove == undefined) {
+                //if we hit the boundary, return what we've got so far.
+                return matchedSoFar;
+            }
+            else {
+                //if not keep going up
+                return this.searchAboveNode(matchGridNode.nodeAbove, matchedSoFar);
+            }
+        }
+        searchBelowNode(matchGridNode, matchedSoFar) {
+            try {
+                if (matchGridNode == undefined || !matchGridNode.isOccupied) {
+                    //if this node is unoccupied return what we've got so far.
+                    return matchedSoFar;
+                }
+                if (matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour) {
+                    //if this node matches so far, add it.
+                    matchedSoFar.push(matchGridNode);
+                }
+                else {
+                    //if this node doesn't match, this chain is over.
+                    return matchedSoFar;
+                }
+                if (matchGridNode.nodeBelow == undefined) {
+                    //if we hit the boundary, return what we've got so far.
+                    return matchedSoFar;
+                }
+                else {
+                    //if not keep going up
+                    return this.searchBelowNode(matchGridNode.nodeBelow, matchedSoFar);
+                }
+            }
+            catch (e) {
+                console.log(e);
+            }
+        }
+        searchLeftNode(matchGridNode, matchedSoFar) {
+            if (matchGridNode == undefined || !matchGridNode.isOccupied) {
+                //if this node is unoccupied return what we've got so far.
+                return matchedSoFar;
+            }
+            if (matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour) {
+                //if this node matches so far, add it.
+                matchedSoFar.push(matchGridNode);
+            }
+            else {
+                //if this node doesn't match, this chain is over.
+                return matchedSoFar;
+            }
+            if (matchGridNode.nodeLeft == undefined) {
+                //if we hit the boundary, return what we've got so far.
+                return matchedSoFar;
+            }
+            else {
+                //if not keep going up
+                return this.searchLeftNode(matchGridNode.nodeLeft, matchedSoFar);
+            }
+        }
+        searchRightNode(matchGridNode, matchedSoFar) {
+            if (matchGridNode == undefined || !matchGridNode.isOccupied) {
+                //if this node is unoccupied return what we've got so far.
+                return matchedSoFar;
+            }
+            if (matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour) {
+                //if this node matches so far, add it.
+                matchedSoFar.push(matchGridNode);
+            }
+            else {
+                //if this node doesn't match, this chain is over.
+                return matchedSoFar;
+            }
+            if (matchGridNode.nodeRight == undefined) {
+                //if we hit the boundary, return what we've got so far.
+                return matchedSoFar;
+            }
+            else {
+                //if not keep going up
+                return this.searchRightNode(matchGridNode.nodeRight, matchedSoFar);
+            }
+        }
+    }
+    exports.GridEvaluator = GridEvaluator;
+});
+define("System/ISystemModel", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
 });
 define("System/SystemModel", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -600,10 +898,22 @@ define("System/SystemModel", ["require", "exports"], function (require, exports)
         get inputController() {
             return this._inputController;
         }
+        set gridEvaluator(gridEvaluator) {
+            this._gridEvaluator = gridEvaluator;
+        }
+        get gridEvaluator() {
+            return this._gridEvaluator;
+        }
+        set gridController(gridController) {
+            this._gridController = gridController;
+        }
+        get gridController() {
+            return this._gridController;
+        }
     }
     exports.SystemModel = SystemModel;
 });
-define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/SystemModel", "Grid/GridController", "System/Events/EventHub", "Grid/GridEvents", "Input/InputController", "Grid/GridModel"], function (require, exports, BlockFactory_1, SystemModel_1, GridController_1, EventHub_1, GridEvents_3, InputController_1, GridModel_1) {
+define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/SystemModel", "Grid/GridController", "System/Events/EventHub", "Grid/GridEvents", "Input/InputController", "Grid/GridModel", "Grid/GridEvaluator"], function (require, exports, BlockFactory_1, SystemModel_1, GridController_1, EventHub_1, GridEvents_4, InputController_1, GridModel_1, GridEvaluator_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Startup {
@@ -620,8 +930,7 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
             this.initialise();
         }
         initialise() {
-            let gridController = new GridController_1.GridController(9, 9, this._systemModel.blockFactory, this._systemModel.eventHub);
-            this.systemModel.eventHub.dispatchEvent(GridEvents_3.GridEvents.InitialiseGridEvent);
+            this.systemModel.eventHub.dispatchEvent(GridEvents_4.GridEvents.InitialiseGridEvent);
         }
         bootstrapGame() {
             //Order is starting to become a concern here. Maaay need to rethink this in terms of categories.
@@ -629,6 +938,7 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
             this.bootstrapModels();
             this.bootstrapInput();
             this.bootstrapBlockFactory();
+            this.bootstrapGrid();
         }
         bootstrapEventHub() {
             let eventHub = new EventHub_1.EventHub();
@@ -644,7 +954,13 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
             this._systemModel.inputController = inputController;
         }
         bootstrapModels() {
-            this._systemModel.gridModel = new GridModel_1.GridModel();
+            this._systemModel.gridModel = new GridModel_1.GridModel(this._systemModel.eventHub);
+        }
+        bootstrapGrid() {
+            let gridEvaluator = new GridEvaluator_1.GridEvaluator(this._systemModel.eventHub);
+            this._systemModel.gridEvaluator = gridEvaluator;
+            let gridController = new GridController_1.GridController(9, 9, this._systemModel.blockFactory, this._systemModel.eventHub);
+            this._systemModel.gridController = gridController;
         }
         get systemModel() {
             return this._systemModel;

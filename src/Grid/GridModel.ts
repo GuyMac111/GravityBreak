@@ -2,6 +2,7 @@ import { EventHandler } from "../System/Events/EventHandler";
 import { EventHub } from "../System/Events/EventHub";
 import { GridEvents } from "./GridEvents";
 import { SwapVO } from "./VOs/SwapVO";
+import { NodeMesh } from "./NodeMesh";
 
 export class GridModel extends EventHandler{
     //hmmmmmm.... Maybe 'InputModel' insted???
@@ -9,6 +10,7 @@ export class GridModel extends EventHandler{
     private _swapCandidateCoord: Phaser.Point;
     private _selectedBlockSwapAnimationComplete: boolean = false;
     private _swapCandidateBlockSwapAnimationComplete: boolean = false;
+    private _gridEvaluationInProgress: boolean = false;
 
     constructor(injectedEventHub: EventHub){
         super(injectedEventHub);
@@ -67,22 +69,23 @@ export class GridModel extends EventHandler{
     private onSelectedBlockSwapComplete(message?:any): void {
         this._selectedBlockSwapAnimationComplete = true;
         if(this._swapCandidateBlockSwapAnimationComplete && this._selectedBlockSwapAnimationComplete){
-            this.handleBothBlockSwapAnimationsComplete();
+            this.handleBothBlockSwapAnimationsComplete(message);
         }
     }
 
     private onSwapCandidateBlockSwapComplete(message?:any): void {
         this._swapCandidateBlockSwapAnimationComplete = true;
         if(this._selectedBlockSwapAnimationComplete && this._swapCandidateBlockSwapAnimationComplete){
-            this.handleBothBlockSwapAnimationsComplete();
+            this.handleBothBlockSwapAnimationsComplete(message);
         }
     }
 
-    private handleBothBlockSwapAnimationsComplete(): void{
-        this._selectedBlockSwapAnimationComplete = false;
-        this._swapCandidateBlockSwapAnimationComplete = false;
+    private handleBothBlockSwapAnimationsComplete(nodeMesh: NodeMesh): void{
+        this.resetAnimationFlags();
         this.removeBlockSwapEventListeners();
+        this._gridEvaluationInProgress = true;
         this.dispatchEvent(GridEvents.BlockSwapAnimationCompleteEvent);
+        this.dispatchEvent(GridEvents.EvaluateGridEvent, nodeMesh);
     }
 
     get currentlySelectedCoord(): Phaser.Point{
@@ -91,6 +94,11 @@ export class GridModel extends EventHandler{
 
     get swapCandidateCoord(): Phaser.Point{
         return this._swapCandidateCoord;
+    }
+
+    private resetAnimationFlags(): void{
+        this._selectedBlockSwapAnimationComplete = false;
+        this._swapCandidateBlockSwapAnimationComplete = false;
     }
 
     resetSelectedAndSwapCoords(): void{

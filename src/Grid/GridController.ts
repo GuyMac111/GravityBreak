@@ -105,11 +105,13 @@ export class GridController extends EventHandler{
 
     private onSelectedBlockMoveComplete(completedBlock: BlockMediator): void{
         completedBlock.blockMoveComplete = undefined;
-        this.dispatchEvent(GridEvents.SelectedBlockSwapAnimationCompleteEvent);
+        //This is bad. We shouldnt really be passing the nodemesh around as a payload but we're running low on time.
+        this.dispatchEvent(GridEvents.SelectedBlockSwapAnimationCompleteEvent, this._gridNodes);
     }
 
     private onSwapCandidateBlockMoveComplete(completedBlock: BlockMediator): void{
         completedBlock.blockMoveComplete = undefined;
-        this.dispatchEvent(GridEvents.SwapCandidateBlockSwapAnimationCompleteEvent);
+        //This is bad. We shouldnt really be passing the nodemesh around as a payload but we're running low on time.
+        this.dispatchEvent(GridEvents.SwapCandidateBlockSwapAnimationCompleteEvent,this._gridNodes);
     }
 }
