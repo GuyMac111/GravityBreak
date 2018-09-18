@@ -9,9 +9,6 @@ import { EventHandler } from "../System/Events/EventHandler";
 import { EventHub } from "../System/Events/EventHub";
 import { GridEvents } from "./GridEvents";
 import { GridNode } from "./GridNode";
-import { BlockEvents } from "../Block/BlockEvents";
-import { GridModel } from "./GridModel";
-import { swap } from "typescript-collections/dist/lib/arrays";
 import { SwapVO } from "./VOs/SwapVO";
 import { BreakVO } from "./VOs/BreakVO";
 
@@ -65,7 +62,7 @@ export class GridController extends EventHandler{
     }
 
     private onBreakBlocksEvent(message?: any): void{
-        let breakDelay: number = 500;
+        let breakDelay: number = 400;
         let breakVos:BreakVO[] = message;
         for(let i:number = 0; i<breakVos.length;i++){
             breakVos[i].coords.toArray().forEach((point:Phaser.Point)=>{
@@ -73,10 +70,10 @@ export class GridController extends EventHandler{
                 if(point === breakVos[breakVos.length-1].coords.toArray[0]){
                     //if this is the first coord of the last set of breaks, we wanna know when it's done.
                     blockMed.blockDestroyComplete = this.onFinalBlockDestroyComplete.bind(this);
+                    //clean up the nodemesh and references in advance.
                     blockMed.currentNode.currentBlock = undefined;
                     blockMed.currentNode = undefined;
                 }
-                //clean up the nodemesh and references.
                 blockMed.showBlockDestroyAnimation(i*breakDelay);
             });
         }

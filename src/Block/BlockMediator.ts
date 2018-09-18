@@ -19,16 +19,16 @@ export class BlockMediator extends Mediator{
         super(injectedEventHub);
         this._blockView = injectedView;
         this._blockColour = colour;
-        this._blockView.initialise(this.translateGridCoordsToWorld(startingGridPosition), this._blockColour);
+        this._blockView.initialise(startingGridPosition, this._blockColour);
         this._blockView.onTouch = this.onViewTouched.bind(this);
     }
 
     cascadeBlockTo(gridDestination: Phaser.Point): void{
-        this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.FALL_DURATION,this.onBlockMoveComplete.bind(this));
+        this._blockView.moveToPosition(gridDestination, this.FALL_DURATION,this.onBlockMoveComplete.bind(this));
     }
 
     swapBlockTo(gridDestination: Phaser.Point): void {
-        this._blockView.moveToPosition(this.translateGridCoordsToWorld(gridDestination), this.SWAP_DURATION,this.onBlockMoveComplete.bind(this));
+        this._blockView.moveToPosition(gridDestination, this.SWAP_DURATION,this.onBlockMoveComplete.bind(this));
     }
 
     private onBlockMoveComplete(): void{
@@ -64,10 +64,6 @@ export class BlockMediator extends Mediator{
 
     get blockColour(): BlockColour{
         return this._blockColour;
-    }
-
-    private translateGridCoordsToWorld(gridCoords: Phaser.Point): Phaser.Point{
-        return new Phaser.Point(gridCoords.x*64, gridCoords.y*64);
     }
 
     private onViewTouched(): void {
