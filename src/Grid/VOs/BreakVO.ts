@@ -1,10 +1,12 @@
+import { Set } from "typescript-collections";
+
 export class BreakVO{
-    private _coords: Phaser.Point[];
-    constructor(coords: Phaser.Point[]){
+    private _coords: Set<Phaser.Point>;
+    constructor(coords: Set<Phaser.Point>){
         this._coords = coords;
     }
 
-    get coords(): Phaser.Point[]{
+    get coords(): Set<Phaser.Point>{
         return this._coords;
     }
 }

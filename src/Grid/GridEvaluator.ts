@@ -34,13 +34,14 @@ export class GridEvaluator extends EventHandler{
     }
 
     private evaluateNode(gridNode: GridNode, breakVOs:BreakVO[]){
-        if(this.nodeExistsInExistingBreak(gridNode,breakVOs)){
+        if(this.nodeExistsInExistingBreak(gridNode,breakVOs)||gridNode.currentBlock==undefined){
             return;
         }
-        let totalVerticalBreak: GridNode[] = this.searchAboveNode(gridNode.nodeAbove, [gridNode]).concat(this.searchBelowNode(gridNode.nodeBelow, [gridNode]));
-        let totalHorizontalBreak: GridNode[] = this.searchLeftNode(gridNode.nodeLeft,[gridNode]).concat(this.searchRightNode(gridNode.nodeRight, [gridNode]));
+        let colour: BlockColour = gridNode.currentBlock.blockColour;
+        let totalVerticalBreak: GridNode[] = this.searchAboveNode(gridNode.nodeAbove,[], colour).concat(this.searchBelowNode(gridNode.nodeBelow, [], colour)).concat(gridNode);
+        let totalHorizontalBreak: GridNode[] = this.searchLeftNode(gridNode.nodeLeft,[], colour).concat(this.searchRightNode(gridNode.nodeRight, [], colour)).concat(gridNode);
         let set:Set<Phaser.Point> = new Set<Phaser.Point>();
-        //substract 1 in the length check because their WILL be 1 duplicate in the array
+        
         if(totalHorizontalBreak.length >= 3){
             totalHorizontalBreak.forEach(element => {
                 set.add(element.gridCoordinate);
@@ -51,27 +52,49 @@ export class GridEvaluator extends EventHandler{
                 set.add(element.gridCoordinate);
             });
         }
+
         if(set.size()>0){
-            breakVOs.push(new BreakVO(set.toArray()));
+            this.addToBreakVOs(new BreakVO(set), breakVOs);
         }
-        //subtract 1 because the original node will be a duplicate
     }
 
     private nodeExistsInExistingBreak(gridNode: GridNode, breakVOs:BreakVO[]): boolean{
         for(let i: number= 0; i<breakVOs.length; i++){
-            if(breakVOs[i].coords.indexOf(gridNode.gridCoordinate)>-1){
+            if(breakVOs[i].coords.contains(gridNode.gridCoordinate)){
                 return true;
             }
         }
         return false;
     }
 
-    private searchAboveNode(matchGridNode:GridNode, matchedSoFar:GridNode[]):GridNode[]{
+    private addToBreakVOs(voToAdd: BreakVO, breakVos: BreakVO[]): void{
+        for(let i:number = 0; i<breakVos.length; i++){
+            if(this.breakVOsIntersect(voToAdd, breakVos[i])){
+                //Before we add it to the list of breakVOs
+                //check that we can't merge it with another instead. 
+                //To avoid duplicates in the payload which we send.
+                breakVos[i].coords.union(voToAdd.coords);
+                return;
+            }
+        }
+        breakVos.push(voToAdd);
+    }
+
+    private breakVOsIntersect(first: BreakVO, second:BreakVO): boolean{
+        for(let i:number = 0; i < first.coords.toArray().length;i++){
+            if(second.coords.contains(first.coords.toArray()[i])){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private searchAboveNode(matchGridNode:GridNode, matchedSoFar:GridNode[], colour: BlockColour):GridNode[]{
         if(matchGridNode==undefined||!matchGridNode.isOccupied){
             //if this node is unoccupied return what we've got so far.
             return matchedSoFar;
         }
-        if(matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour){
+        if(matchGridNode.currentBlock.blockColour == colour){
             //if this node matches so far, add it.
             matchedSoFar.push(matchGridNode);
         }else{
@@ -83,17 +106,17 @@ export class GridEvaluator extends EventHandler{
             return matchedSoFar;
         }else{
             //if not keep going up
-            return this.searchAboveNode(matchGridNode.nodeAbove, matchedSoFar);
+            return this.searchAboveNode(matchGridNode.nodeAbove, matchedSoFar, colour);
         }
     }
 
-    private searchBelowNode(matchGridNode:GridNode, matchedSoFar:GridNode[]):GridNode[]{
+    private searchBelowNode(matchGridNode:GridNode, matchedSoFar:GridNode[], colour: BlockColour):GridNode[]{
         try{
             if(matchGridNode==undefined||!matchGridNode.isOccupied){
                 //if this node is unoccupied return what we've got so far.
                 return matchedSoFar;
             }
-            if(matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour){
+            if(matchGridNode.currentBlock.blockColour == colour){
                 //if this node matches so far, add it.
                 matchedSoFar.push(matchGridNode);
             }else{
@@ -104,8 +127,8 @@ export class GridEvaluator extends EventHandler{
                 //if we hit the boundary, return what we've got so far.
                 return matchedSoFar;
             }else{
-                //if not keep going up
-                return this.searchBelowNode(matchGridNode.nodeBelow, matchedSoFar);
+                //if not keep going down
+                return this.searchBelowNode(matchGridNode.nodeBelow, matchedSoFar, colour);
             }
 
         }catch(e){
@@ -113,12 +136,12 @@ export class GridEvaluator extends EventHandler{
         }
     }
 
-    private searchLeftNode(matchGridNode:GridNode, matchedSoFar:GridNode[]):GridNode[]{
+    private searchLeftNode(matchGridNode:GridNode, matchedSoFar:GridNode[], colour: BlockColour):GridNode[]{
         if(matchGridNode==undefined||!matchGridNode.isOccupied){
             //if this node is unoccupied return what we've got so far.
             return matchedSoFar;
         }
-        if(matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour){
+        if(matchGridNode.currentBlock.blockColour == colour){
             //if this node matches so far, add it.
             matchedSoFar.push(matchGridNode);
         }else{
@@ -129,17 +152,17 @@ export class GridEvaluator extends EventHandler{
             //if we hit the boundary, return what we've got so far.
             return matchedSoFar;
         }else{
-            //if not keep going up
-            return this.searchLeftNode(matchGridNode.nodeLeft, matchedSoFar);
+            //if not keep going left
+            return this.searchLeftNode(matchGridNode.nodeLeft, matchedSoFar, colour);
         }
     }
 
-    private searchRightNode(matchGridNode:GridNode, matchedSoFar:GridNode[]):GridNode[]{
+    private searchRightNode(matchGridNode:GridNode, matchedSoFar:GridNode[], colour: BlockColour):GridNode[]{
         if(matchGridNode==undefined||!matchGridNode.isOccupied){
             //if this node is unoccupied return what we've got so far.
             return matchedSoFar;
         }
-        if(matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour){
+        if(matchGridNode.currentBlock.blockColour == colour){
             //if this node matches so far, add it.
             matchedSoFar.push(matchGridNode);
         }else{
@@ -150,8 +173,8 @@ export class GridEvaluator extends EventHandler{
             //if we hit the boundary, return what we've got so far.
             return matchedSoFar;
         }else{
-            //if not keep going up
-            return this.searchRightNode(matchGridNode.nodeRight, matchedSoFar);
+            //if not keep going right
+            return this.searchRightNode(matchGridNode.nodeRight, matchedSoFar, colour);
         }
     }
 }

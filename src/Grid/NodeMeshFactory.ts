@@ -19,10 +19,19 @@ export class NodeMeshFactory{
     }
 
     private createUnassociatedNodeMesh(_dimensionsInNodes: Phaser.Point): Dictionary<Phaser.Point, GridNode> {
-        let nodeMesh: Dictionary<Phaser.Point, GridNode> = new Dictionary<Phaser.Point, GridNode>();
+        let toStr:(key:Phaser.Point) => string = (key:Phaser.Point) : string => {
+            return `${key.x},${key.y}`;
+        };
+        
+        let nodeMesh: Dictionary<Phaser.Point, GridNode> = new Dictionary<Phaser.Point, GridNode>(toStr);
         for(let i = 0; i<_dimensionsInNodes.x; i++){
             for(let j = 0; j<_dimensionsInNodes.y; j++){
                 let node = new GridNode(new Phaser.Point(i,j));
+
+                if(nodeMesh.containsKey(node.gridCoordinate)){
+                    console.log("COLLISION");
+                }
+
                 nodeMesh.setValue(node.gridCoordinate, node);
                 console.log(`NodeMeshFactory::: Created node with grid location ${node.gridCoordinate.x},${node.gridCoordinate.y}`);
             }
@@ -46,7 +55,7 @@ export class NodeMeshFactory{
     private associateAbove(nodeToAssociate: GridNode): void {
         if(nodeToAssociate.gridCoordinate.y>0){
             //If it's not in the top row
-            nodeToAssociate.nodeAbove = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x,nodeToAssociate.gridCoordinate.y-1));
+            nodeToAssociate.nodeAbove = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x, nodeToAssociate.gridCoordinate.y-1));
             console.log(`NodeMeshFactory::: The node above node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeAbove.gridCoordinate}`);
         }else{
             console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is at the top. Creating spawn node above.`);
@@ -82,10 +91,11 @@ export class NodeMeshFactory{
     private associateRight(nodeToAssociate: GridNode): void {
         if(nodeToAssociate.gridCoordinate.x<this._dimensionsInNodes.x-1){
             //If it's not in the right-most row
-            nodeToAssociate.nodeAbove = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x+1,nodeToAssociate.gridCoordinate.y));
-            console.log(`NodeMeshFactory::: The node to the right of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeAbove.gridCoordinate}`);
+            ///IT WAS HEREE::::::: LOOOL. 
+            nodeToAssociate.nodeRight = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x+1,nodeToAssociate.gridCoordinate.y));
+            console.log(`NodeMeshFactory::: The node to the right of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeRight.gridCoordinate}`);
         }else{
-            console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the left. Creating spawn node left.`);
+            console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the right. Creating spawn node left.`);
             let spawnNodeLocation: Phaser.Point = new Phaser.Point(this._dimensionsInNodes.x ,nodeToAssociate.gridCoordinate.y);
             this.createSecretSpawnNode(spawnNodeLocation);
 

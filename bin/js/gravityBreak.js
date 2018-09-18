@@ -221,7 +221,40 @@ define("Grid/GridNode", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     class GridNode {
         constructor(gridCoordinate) {
+            this._nodeAbove = undefined;
+            this._nodeBelow = undefined;
+            this._nodeLeft = undefined;
+            this._nodeRight = undefined;
+            this._numTimesAboveSet = 0;
             this._gridCoordinate = new Phaser.Point(gridCoordinate.x, gridCoordinate.y);
+        }
+        get nodeAbove() {
+            return this._nodeAbove;
+        }
+        get nodeBelow() {
+            return this._nodeBelow;
+        }
+        get nodeLeft() {
+            return this._nodeLeft;
+        }
+        get nodeRight() {
+            return this._nodeRight;
+        }
+        set nodeAbove(node) {
+            if (this._numTimesAboveSet > 0) {
+                console.log(`HERE!!!!! ${this._gridCoordinate}`);
+            }
+            this._numTimesAboveSet++;
+            this._nodeAbove = node;
+        }
+        set nodeBelow(node) {
+            this._nodeBelow = node;
+        }
+        set nodeLeft(node) {
+            this._nodeLeft = node;
+        }
+        set nodeRight(node) {
+            this._nodeRight = node;
         }
         get gridCoordinate() {
             return this._gridCoordinate;
@@ -267,10 +300,16 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
             return new NodeMesh_1.NodeMesh(this._nodeMesh, this._spawnNodeMesh, this._dimensionsInNodes);
         }
         createUnassociatedNodeMesh(_dimensionsInNodes) {
-            let nodeMesh = new typescript_collections_2.Dictionary();
+            let toStr = (key) => {
+                return `${key.x},${key.y}`;
+            };
+            let nodeMesh = new typescript_collections_2.Dictionary(toStr);
             for (let i = 0; i < _dimensionsInNodes.x; i++) {
                 for (let j = 0; j < _dimensionsInNodes.y; j++) {
                     let node = new GridNode_1.GridNode(new Phaser.Point(i, j));
+                    if (nodeMesh.containsKey(node.gridCoordinate)) {
+                        console.log("COLLISION");
+                    }
                     nodeMesh.setValue(node.gridCoordinate, node);
                     console.log(`NodeMeshFactory::: Created node with grid location ${node.gridCoordinate.x},${node.gridCoordinate.y}`);
                 }
@@ -327,11 +366,12 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
         associateRight(nodeToAssociate) {
             if (nodeToAssociate.gridCoordinate.x < this._dimensionsInNodes.x - 1) {
                 //If it's not in the right-most row
-                nodeToAssociate.nodeAbove = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x + 1, nodeToAssociate.gridCoordinate.y));
-                console.log(`NodeMeshFactory::: The node to the right of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeAbove.gridCoordinate}`);
+                ///IT WAS HEREE::::::: LOOOL. 
+                nodeToAssociate.nodeRight = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x + 1, nodeToAssociate.gridCoordinate.y));
+                console.log(`NodeMeshFactory::: The node to the right of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeRight.gridCoordinate}`);
             }
             else {
-                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the left. Creating spawn node left.`);
+                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the right. Creating spawn node left.`);
                 let spawnNodeLocation = new Phaser.Point(this._dimensionsInNodes.x, nodeToAssociate.gridCoordinate.y);
                 this.createSecretSpawnNode(spawnNodeLocation);
             }
@@ -740,13 +780,13 @@ define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/B
             }
         }
         evaluateNode(gridNode, breakVOs) {
-            if (this.nodeExistsInExistingBreak(gridNode, breakVOs)) {
+            if (this.nodeExistsInExistingBreak(gridNode, breakVOs) || gridNode.currentBlock == undefined) {
                 return;
             }
-            let totalVerticalBreak = this.searchAboveNode(gridNode.nodeAbove, [gridNode]).concat(this.searchBelowNode(gridNode.nodeBelow, [gridNode]));
-            let totalHorizontalBreak = this.searchLeftNode(gridNode.nodeLeft, [gridNode]).concat(this.searchRightNode(gridNode.nodeRight, [gridNode]));
+            let colour = gridNode.currentBlock.blockColour;
+            let totalVerticalBreak = this.searchAboveNode(gridNode.nodeAbove, [], colour).concat(this.searchBelowNode(gridNode.nodeBelow, [], colour)).concat(gridNode);
+            let totalHorizontalBreak = this.searchLeftNode(gridNode.nodeLeft, [], colour).concat(this.searchRightNode(gridNode.nodeRight, [], colour)).concat(gridNode);
             let set = new typescript_collections_3.Set();
-            //substract 1 in the length check because their WILL be 1 duplicate in the array
             if (totalHorizontalBreak.length >= 3) {
                 totalHorizontalBreak.forEach(element => {
                     set.add(element.gridCoordinate);
@@ -758,24 +798,43 @@ define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/B
                 });
             }
             if (set.size() > 0) {
-                breakVOs.push(new BreakVO_1.BreakVO(set.toArray()));
+                this.addToBreakVOs(new BreakVO_1.BreakVO(set), breakVOs);
             }
-            //subtract 1 because the original node will be a duplicate
         }
         nodeExistsInExistingBreak(gridNode, breakVOs) {
             for (let i = 0; i < breakVOs.length; i++) {
-                if (breakVOs[i].coords.indexOf(gridNode.gridCoordinate) > -1) {
+                if (breakVOs[i].coords.contains(gridNode.gridCoordinate)) {
                     return true;
                 }
             }
             return false;
         }
-        searchAboveNode(matchGridNode, matchedSoFar) {
+        addToBreakVOs(voToAdd, breakVos) {
+            for (let i = 0; i < breakVos.length; i++) {
+                if (this.breakVOsIntersect(voToAdd, breakVos[i])) {
+                    //Before we add it to the list of breakVOs
+                    //check that we can't merge it with another instead. 
+                    //To avoid duplicates in the payload which we send.
+                    breakVos[i].coords.union(voToAdd.coords);
+                    return;
+                }
+            }
+            breakVos.push(voToAdd);
+        }
+        breakVOsIntersect(first, second) {
+            for (let i = 0; i < first.coords.toArray().length; i++) {
+                if (second.coords.contains(first.coords.toArray()[i])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        searchAboveNode(matchGridNode, matchedSoFar, colour) {
             if (matchGridNode == undefined || !matchGridNode.isOccupied) {
                 //if this node is unoccupied return what we've got so far.
                 return matchedSoFar;
             }
-            if (matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour) {
+            if (matchGridNode.currentBlock.blockColour == colour) {
                 //if this node matches so far, add it.
                 matchedSoFar.push(matchGridNode);
             }
@@ -789,16 +848,16 @@ define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/B
             }
             else {
                 //if not keep going up
-                return this.searchAboveNode(matchGridNode.nodeAbove, matchedSoFar);
+                return this.searchAboveNode(matchGridNode.nodeAbove, matchedSoFar, colour);
             }
         }
-        searchBelowNode(matchGridNode, matchedSoFar) {
+        searchBelowNode(matchGridNode, matchedSoFar, colour) {
             try {
                 if (matchGridNode == undefined || !matchGridNode.isOccupied) {
                     //if this node is unoccupied return what we've got so far.
                     return matchedSoFar;
                 }
-                if (matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour) {
+                if (matchGridNode.currentBlock.blockColour == colour) {
                     //if this node matches so far, add it.
                     matchedSoFar.push(matchGridNode);
                 }
@@ -811,20 +870,20 @@ define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/B
                     return matchedSoFar;
                 }
                 else {
-                    //if not keep going up
-                    return this.searchBelowNode(matchGridNode.nodeBelow, matchedSoFar);
+                    //if not keep going down
+                    return this.searchBelowNode(matchGridNode.nodeBelow, matchedSoFar, colour);
                 }
             }
             catch (e) {
                 console.log(e);
             }
         }
-        searchLeftNode(matchGridNode, matchedSoFar) {
+        searchLeftNode(matchGridNode, matchedSoFar, colour) {
             if (matchGridNode == undefined || !matchGridNode.isOccupied) {
                 //if this node is unoccupied return what we've got so far.
                 return matchedSoFar;
             }
-            if (matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour) {
+            if (matchGridNode.currentBlock.blockColour == colour) {
                 //if this node matches so far, add it.
                 matchedSoFar.push(matchGridNode);
             }
@@ -837,16 +896,16 @@ define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/B
                 return matchedSoFar;
             }
             else {
-                //if not keep going up
-                return this.searchLeftNode(matchGridNode.nodeLeft, matchedSoFar);
+                //if not keep going left
+                return this.searchLeftNode(matchGridNode.nodeLeft, matchedSoFar, colour);
             }
         }
-        searchRightNode(matchGridNode, matchedSoFar) {
+        searchRightNode(matchGridNode, matchedSoFar, colour) {
             if (matchGridNode == undefined || !matchGridNode.isOccupied) {
                 //if this node is unoccupied return what we've got so far.
                 return matchedSoFar;
             }
-            if (matchGridNode.currentBlock.blockColour == matchedSoFar[0].currentBlock.blockColour) {
+            if (matchGridNode.currentBlock.blockColour == colour) {
                 //if this node matches so far, add it.
                 matchedSoFar.push(matchGridNode);
             }
@@ -859,8 +918,8 @@ define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/B
                 return matchedSoFar;
             }
             else {
-                //if not keep going up
-                return this.searchRightNode(matchGridNode.nodeRight, matchedSoFar);
+                //if not keep going right
+                return this.searchRightNode(matchGridNode.nodeRight, matchedSoFar, colour);
             }
         }
     }
