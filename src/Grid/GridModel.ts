@@ -114,7 +114,13 @@ export class GridModel extends EventHandler{
 
     private onGridEvaluationSuccessEvent(message?:any): void {
         this.resetAnimationFlags();
-        this.dispatchEvent(GridEvents.BreakBlocksEvent, message);
+        this.addEventListener(GridEvents.BreakAndCascadeBlocksCompleteEvent, this.onBreakAndCascaseBlocksCompleteEvent.bind(this));
+        this.dispatchEvent(GridEvents.BreakAndCascadeBlocksEvent, message);
+    }
+    
+    private onBreakAndCascaseBlocksCompleteEvent(): void {
+        console.log("WEVE SETTLED!!!")
+        // this.dispatchEvent(GridEvents.EvaluateGridEvent);
     }
 
     private onGridEvaluationNegativeEvent(message?:any): void {

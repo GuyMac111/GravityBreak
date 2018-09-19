@@ -4,6 +4,7 @@ import { GridNode } from "../Grid/GridNode";
 import { Dictionary } from "typescript-collections";
 import { Point } from "phaser";
 import { NodeMesh } from "../Grid/NodeMesh";
+import { CascadeVO } from "../Grid/VOs/CascadeVO";
 
 export class DownCascadeStrategy implements ICascadeStrategy{
     private _nodeMesh: NodeMesh;
@@ -49,5 +50,42 @@ export class DownCascadeStrategy implements ICascadeStrategy{
             }
         }
         return undefined;
-    }   
+    }
+
+    get blocksToCascade(): CascadeVO[]{
+        return this.getCascadeDataForGrid();
+    }
+
+    private getCascadeDataForGrid(): CascadeVO[]{
+        let result: CascadeVO[] = [];
+        this._nodeMesh.nodes.forEach((coord:Phaser.Point, node:GridNode):void=>{
+            let cascadeDataForNode: CascadeVO = this.getCascadeDataForNode(node);
+            if(cascadeDataForNode!=undefined){
+                result.push(cascadeDataForNode);
+            }
+        });
+        return result;
+    }
+    
+    private getCascadeDataForNode(node: GridNode): CascadeVO{
+        let distanceToCascade: number = this.getNumberOfEmptyNodesBelowNode(node,0);
+        if(node.isOccupied && distanceToCascade>0){
+            let cascadeDestination: Phaser.Point = new Phaser.Point(node.gridCoordinate.x, node.gridCoordinate.y+distanceToCascade);
+            let cascadeVO: CascadeVO = new CascadeVO(node.currentBlock, cascadeDestination);
+            return cascadeVO;
+        }else{
+            return undefined;
+        }
+    }
+
+    private getNumberOfEmptyNodesBelowNode(node:GridNode, emptyNodes: number): number{
+        if(!node.isOccupied){
+            emptyNodes++
+        }
+        if(node.nodeBelow!=undefined){
+            return this.getNumberOfEmptyNodesBelowNode(node.nodeBelow,emptyNodes);
+        }else{
+            return emptyNodes;
+        }
+    }
 }

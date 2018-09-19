@@ -139,6 +139,17 @@ define("Block/BlockView", ["require", "exports", "System/View"], function (requi
             }
             tween.start();
         }
+        cascadeToPosition(destinationGridCoordinates, speed, onComplete) {
+            let dest = this.translateGridCoordsToWorld(destinationGridCoordinates);
+            let tween = this.game.add.tween(this._diamondSprite).to({
+                x: dest.x,
+                y: dest.y
+            }, speed, Phaser.Easing.Cubic.In);
+            if (onComplete != undefined) {
+                tween.onComplete.add(onComplete);
+            }
+            tween.start();
+        }
         showBlockSelected() {
             let tween = this.game.add.tween(this._diamondSprite.scale).to({
                 x: 1.2,
@@ -188,18 +199,22 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
     class BlockMediator extends Mediator_1.Mediator {
         constructor(startingGridPosition, colour, injectedView, injectedEventHub) {
             super(injectedEventHub);
-            this.FALL_DURATION = 10;
+            this.SPAWN_DURATION = 10;
             this.SWAP_DURATION = 100;
+            this.CASCADE_DURATION = 200;
             this._blockView = injectedView;
             this._blockColour = colour;
             this._blockView.initialise(startingGridPosition, this._blockColour);
             this._blockView.onTouch = this.onViewTouched.bind(this);
         }
-        cascadeBlockTo(gridDestination) {
-            this._blockView.moveToPosition(gridDestination, this.FALL_DURATION, this.onBlockMoveComplete.bind(this));
+        spawnBlockTo(gridDestination) {
+            this._blockView.moveToPosition(gridDestination, this.SPAWN_DURATION, this.onBlockMoveComplete.bind(this));
         }
         swapBlockTo(gridDestination) {
             this._blockView.moveToPosition(gridDestination, this.SWAP_DURATION, this.onBlockMoveComplete.bind(this));
+        }
+        cascadeBlockTo(gridDestination) {
+            this._blockView.moveToPosition(gridDestination, this.CASCADE_DURATION, this.onBlockMoveComplete.bind(this));
         }
         onBlockMoveComplete() {
             console.log("BlockMediator.onBlockMoveComplete()::: Block completed movement");
@@ -223,15 +238,12 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
                 this.blockDestroyComplete(this);
             }
         }
-        set currentNode(node) {
-            this._currentNode = node;
-        }
         get blockColour() {
             return this._blockColour;
         }
         onViewTouched() {
-            if (this._currentNode != undefined) {
-                this.dispatchEvent(BlockEvents_1.BlockEvents.BlockTouchedEvent, this._currentNode.gridCoordinate);
+            if (this.currentNode != undefined) {
+                this.dispatchEvent(BlockEvents_1.BlockEvents.BlockTouchedEvent, this.currentNode.gridCoordinate);
             }
         }
     }
@@ -418,11 +430,28 @@ define("Cascade/SpawnData", ["require", "exports"], function (require, exports) 
     }
     exports.SpawnData = SpawnData;
 });
+define("Grid/VOs/CascadeVO", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class CascadeVO {
+        constructor(cascadingBlock, destination) {
+            this._cascadingBlock = cascadingBlock;
+            this._destination = destination;
+        }
+        get cascadingBlock() {
+            return this._cascadingBlock;
+        }
+        get destination() {
+            return this._destination;
+        }
+    }
+    exports.CascadeVO = CascadeVO;
+});
 define("Cascade/ICascadeStrategy", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("Cascade/DownCascadeStrategy", ["require", "exports", "Cascade/SpawnData"], function (require, exports, SpawnData_1) {
+define("Cascade/DownCascadeStrategy", ["require", "exports", "Cascade/SpawnData", "Grid/VOs/CascadeVO"], function (require, exports, SpawnData_1, CascadeVO_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class DownCascadeStrategy {
@@ -463,6 +492,41 @@ define("Cascade/DownCascadeStrategy", ["require", "exports", "Cascade/SpawnData"
                 }
             }
             return undefined;
+        }
+        get blocksToCascade() {
+            return this.getCascadeDataForGrid();
+        }
+        getCascadeDataForGrid() {
+            let result = [];
+            this._nodeMesh.nodes.forEach((coord, node) => {
+                let cascadeDataForNode = this.getCascadeDataForNode(node);
+                if (cascadeDataForNode != undefined) {
+                    result.push(cascadeDataForNode);
+                }
+            });
+            return result;
+        }
+        getCascadeDataForNode(node) {
+            let distanceToCascade = this.getNumberOfEmptyNodesBelowNode(node, 0);
+            if (node.isOccupied && distanceToCascade > 0) {
+                let cascadeDestination = new Phaser.Point(node.gridCoordinate.x, node.gridCoordinate.y + distanceToCascade);
+                let cascadeVO = new CascadeVO_1.CascadeVO(node.currentBlock, cascadeDestination);
+                return cascadeVO;
+            }
+            else {
+                return undefined;
+            }
+        }
+        getNumberOfEmptyNodesBelowNode(node, emptyNodes) {
+            if (!node.isOccupied) {
+                emptyNodes++;
+            }
+            if (node.nodeBelow != undefined) {
+                return this.getNumberOfEmptyNodesBelowNode(node.nodeBelow, emptyNodes);
+            }
+            else {
+                return emptyNodes;
+            }
         }
     }
     exports.DownCascadeStrategy = DownCascadeStrategy;
@@ -529,8 +593,8 @@ define("Grid/GridEvents", ["require", "exports"], function (require, exports) {
     GridEvents.EvaluateGridEvent = "GridEvent.EvaluateGrid";
     GridEvents.GridEvaluationPositiveEvent = "GridEvent.GridEvalutationPositive";
     GridEvents.GridEvaluationNegativeEvent = "GridEvent.GridEvalutationNegative";
-    GridEvents.BreakBlocksEvent = "GridEvent.BreakBlocks";
-    GridEvents.BreakBlocksComplete = "GridEvent.BreakBlocksComplete";
+    GridEvents.BreakAndCascadeBlocksEvent = "GridEvent.BreakAndCascadeBlocks";
+    GridEvents.BreakAndCascadeBlocksCompleteEvent = "GridEvent.BreakAndCascadeBlocksComplete";
     exports.GridEvents = GridEvents;
 });
 define("Grid/VOs/SwapVO", ["require", "exports"], function (require, exports) {
@@ -573,7 +637,7 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
             this.addEventListener(GridEvents_1.GridEvents.ShowBlockSelectedEvent, this.onShowBlockSelectedEvent.bind(this));
             this.addEventListener(GridEvents_1.GridEvents.ShowBlockUnselectedEvent, this.onShowBlockUnselectedEvent.bind(this));
             this.addEventListener(GridEvents_1.GridEvents.ShowBlockSwapAnimationEvent, this.onShowBlockSwapAnimationEvent.bind(this));
-            this.addEventListener(GridEvents_1.GridEvents.BreakBlocksEvent, this.onBreakBlocksEvent.bind(this));
+            this.addEventListener(GridEvents_1.GridEvents.BreakAndCascadeBlocksEvent, this.onBreakBlocksEvent.bind(this));
             let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
             this._blockFactory = injectedBlockFactory;
             //TODO: move instantiation of NodeMeshFactory into bootstrap and 'inject'
@@ -600,50 +664,76 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
                 //Set the blockMediators ref to the destination node so that it can access its own location for input events
                 block.currentNode = spawnData.destination;
                 console.log(`GridController.spawnBlocks()::: Block move started (initial position ${spawnData.spawnNode.gridCoordinate.x},${spawnData.spawnNode.gridCoordinate.y})`);
-                block.cascadeBlockTo(spawnData.destination.gridCoordinate);
+                block.spawnBlockTo(spawnData.destination.gridCoordinate);
             }
             else {
                 //Our grid should be full at this point
-                console.log("GridController.spawnBlocks()::: Our grid is fully cascaded.....supposedly.");
+                console.log("GridController.spawnBlocks()::: Our grid is full.....supposedly.");
             }
-        }
-        onBreakBlocksEvent(message) {
-            let breakDelay = 400;
-            let breakVos = message;
-            for (let i = 0; i < breakVos.length; i++) {
-                breakVos[i].coords.toArray().forEach((point) => {
-                    let blockMed = this._gridNodes.nodes.getValue(point).currentBlock;
-                    if (point === breakVos[breakVos.length - 1].coords.toArray[0]) {
-                        //if this is the first coord of the last set of breaks, we wanna know when it's done.
-                        blockMed.blockDestroyComplete = this.onFinalBlockDestroyComplete.bind(this);
-                        //clean up the nodemesh and references in advance.
-                        blockMed.currentNode.currentBlock = undefined;
-                        blockMed.currentNode = undefined;
-                    }
-                    blockMed.showBlockDestroyAnimation(i * breakDelay);
-                });
-            }
-        }
-        onFinalBlockDestroyComplete(blockMediator) {
-            blockMediator.blockDestroyComplete = undefined;
-            console.log("We're done breaking for now");
-            this.dispatchEvent(GridEvents_1.GridEvents.BreakBlocksComplete);
         }
         onBlockSpawnCompleteCallback(completedBlock) {
             completedBlock.blockMoveComplete = undefined;
             this.spawnBlocks();
         }
-        onShowBlockSelectedEvent(message) {
-            if (message instanceof Phaser.Point) {
-                console.log(`GridController.onShowBlockSelectedEvent()::: Selecting block ${message}`);
-                this._gridNodes.nodes.getValue(message).currentBlock.showBlockSelected();
+        onBreakBlocksEvent(message) {
+            let breakDelay = 400;
+            let breakVos = message;
+            for (let i = 0; i < breakVos.length; i++) {
+                let coords = breakVos[i].coords.toArray();
+                for (let j = 0; j < coords.length; j++) {
+                    let blockMed = this._gridNodes.nodes.getValue(coords[j]).currentBlock;
+                    //clean up the nodemesh and references in advance.
+                    blockMed.currentNode.currentBlock = undefined;
+                    blockMed.currentNode = undefined;
+                    let coord = coords[j];
+                    let firstCoordOfFinalVO = breakVos[breakVos.length - 1].coords.toArray()[0];
+                    if (coord == firstCoordOfFinalVO) {
+                        //if this is the first coord of the last set of breaks, we wanna know when it's done.
+                        blockMed.blockDestroyComplete = this.onFinalBlockDestroyComplete.bind(this);
+                    }
+                    blockMed.showBlockDestroyAnimation(i * breakDelay);
+                }
             }
         }
-        onShowBlockUnselectedEvent(message) {
-            if (message instanceof Phaser.Point) {
-                console.log(`GridController.onShowBlockUnselectedEvent()::: Unselecting block ${message}`);
-                this._gridNodes.nodes.getValue(message).currentBlock.showBlockUnselected();
+        onFinalBlockDestroyComplete(blockMediator) {
+            blockMediator.blockDestroyComplete = undefined;
+            console.log("We're done breaking for now");
+            this.cascadeBlocks();
+        }
+        cascadeBlocks() {
+            let cascadeStrategy = this._cascadeStrategyProvider.cascadeStrategy;
+            let blocksToCascade = cascadeStrategy.blocksToCascade;
+            if (blocksToCascade.length > 0) {
+                for (let i = 0; i < blocksToCascade.length; i++) {
+                    let cascadeVO = blocksToCascade[i];
+                    let cascadingBlock = cascadeVO.cascadingBlock;
+                    let destinationNode = this._gridNodes.nodes.getValue(cascadeVO.destination);
+                    destinationNode.currentBlock = cascadingBlock;
+                    cascadingBlock.currentNode = destinationNode;
+                    if (i == blocksToCascade.length - 1) {
+                        //if it's the last block, we wanna know when it's done.
+                        cascadingBlock.blockMoveComplete = this.onLastBlockCascadeComplete.bind(this);
+                    }
+                    cascadingBlock.cascadeBlockTo(cascadeVO.destination);
+                }
+                // blocksToCascade.forEach((cascadeVO: CascadeVO, index: number):void=>{
+                //     let cascadingBlock:BlockMediator = cascadeVO.cascadingBlock;
+                //     let destinationNode = this._gridNodes.nodes.getValue(cascadeVO.destination)
+                //     destinationNode.currentBlock = cascadingBlock;
+                //     cascadingBlock.currentNode = destinationNode;
+                //     if(index == blocksToCascade.length-1){
+                //         //if it's the last block
+                //         cascadingBlock.blockMoveComplete = this.onLastBlockCascadeComplete.bind(this);
+                //     }
+                //     cascadingBlock.cascadeBlockTo(cascadeVO.destination);
+                // });
             }
+            else {
+                this.dispatchEvent(GridEvents_1.GridEvents.BreakAndCascadeBlocksCompleteEvent);
+            }
+        }
+        onLastBlockCascadeComplete() {
+            this.dispatchEvent(GridEvents_1.GridEvents.BreakAndCascadeBlocksCompleteEvent);
         }
         onShowBlockSwapAnimationEvent(message) {
             if (message instanceof SwapVO_1.SwapVO) {
@@ -674,6 +764,18 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
             completedBlock.blockMoveComplete = undefined;
             //This is bad. We shouldnt really be passing the nodemesh around as a payload but we're running low on time.
             this.dispatchEvent(GridEvents_1.GridEvents.SwapCandidateBlockSwapAnimationCompleteEvent, this._gridNodes);
+        }
+        onShowBlockSelectedEvent(message) {
+            if (message instanceof Phaser.Point) {
+                console.log(`GridController.onShowBlockSelectedEvent()::: Selecting block ${message}`);
+                this._gridNodes.nodes.getValue(message).currentBlock.showBlockSelected();
+            }
+        }
+        onShowBlockUnselectedEvent(message) {
+            if (message instanceof Phaser.Point) {
+                console.log(`GridController.onShowBlockUnselectedEvent()::: Unselecting block ${message}`);
+                this._gridNodes.nodes.getValue(message).currentBlock.showBlockUnselected();
+            }
         }
     }
     exports.GridController = GridController;
@@ -773,7 +875,12 @@ define("Grid/GridModel", ["require", "exports", "System/Events/EventHandler", "G
         }
         onGridEvaluationSuccessEvent(message) {
             this.resetAnimationFlags();
-            this.dispatchEvent(GridEvents_2.GridEvents.BreakBlocksEvent, message);
+            this.addEventListener(GridEvents_2.GridEvents.BreakAndCascadeBlocksCompleteEvent, this.onBreakAndCascaseBlocksCompleteEvent.bind(this));
+            this.dispatchEvent(GridEvents_2.GridEvents.BreakAndCascadeBlocksEvent, message);
+        }
+        onBreakAndCascaseBlocksCompleteEvent() {
+            console.log("WEVE SETTLED!!!");
+            // this.dispatchEvent(GridEvents.EvaluateGridEvent);
         }
         onGridEvaluationNegativeEvent(message) {
             //this should be deferred until the swapback has been completed but we'll live with it

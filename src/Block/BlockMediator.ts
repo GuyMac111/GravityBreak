@@ -6,11 +6,13 @@ import { BlockEvents } from "./BlockEvents";
 import { GridNode } from "../Grid/GridNode";
 
 export class BlockMediator extends Mediator{
-    private readonly FALL_DURATION: number = 10;
+    private readonly SPAWN_DURATION: number = 10;
     private readonly SWAP_DURATION: number = 100;
+    private readonly CASCADE_DURATION: number = 200;
+
     private _blockView: BlockView;
     private _blockColour: BlockColour;
-    private _currentNode: GridNode;//Didn't want to do this, but it's the cleanest way for a BlockMediator to get it's own location 
+    currentNode: GridNode;//Didn't want to do this, but it's the cleanest way for a BlockMediator to get it's own location 
 
     blockMoveComplete: (completedBlock: BlockMediator)=>void;
     blockDestroyComplete: (completedBlock: BlockMediator)=>void;
@@ -23,12 +25,16 @@ export class BlockMediator extends Mediator{
         this._blockView.onTouch = this.onViewTouched.bind(this);
     }
 
-    cascadeBlockTo(gridDestination: Phaser.Point): void{
-        this._blockView.moveToPosition(gridDestination, this.FALL_DURATION,this.onBlockMoveComplete.bind(this));
+    spawnBlockTo(gridDestination: Phaser.Point): void{
+        this._blockView.moveToPosition(gridDestination, this.SPAWN_DURATION,this.onBlockMoveComplete.bind(this));
     }
 
     swapBlockTo(gridDestination: Phaser.Point): void {
         this._blockView.moveToPosition(gridDestination, this.SWAP_DURATION,this.onBlockMoveComplete.bind(this));
+    }
+
+    cascadeBlockTo(gridDestination: Phaser.Point): void {
+        this._blockView.moveToPosition(gridDestination, this.CASCADE_DURATION, this.onBlockMoveComplete.bind(this));
     }
 
     private onBlockMoveComplete(): void{
@@ -58,17 +64,13 @@ export class BlockMediator extends Mediator{
         }
     }
 
-    set currentNode(node: GridNode){
-        this._currentNode = node;
-    }
-
     get blockColour(): BlockColour{
         return this._blockColour;
     }
 
     private onViewTouched(): void {
-        if(this._currentNode!=undefined){
-            this.dispatchEvent(BlockEvents.BlockTouchedEvent, this._currentNode.gridCoordinate);
+        if(this.currentNode!=undefined){
+            this.dispatchEvent(BlockEvents.BlockTouchedEvent, this.currentNode.gridCoordinate);
         }
     }
 }

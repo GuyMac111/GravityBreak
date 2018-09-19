@@ -35,6 +35,19 @@ export class BlockView extends View{
         tween.start();
     }
 
+    cascadeToPosition(destinationGridCoordinates: Phaser.Point, speed:number, onComplete?: () => void) {
+        let dest: Phaser.Point = this.translateGridCoordsToWorld(destinationGridCoordinates);
+        let tween:Phaser.Tween = this.game.add.tween(this._diamondSprite).to({
+                x: dest.x, 
+                y: dest.y
+            }, speed, Phaser.Easing.Cubic.In);
+        
+        if(onComplete!=undefined){
+            tween.onComplete.add(onComplete);
+        }
+        tween.start();
+    }
+
     showBlockSelected():void{
         let tween:Phaser.Tween = this.game.add.tween(this._diamondSprite.scale).to({
             x: 1.2,
