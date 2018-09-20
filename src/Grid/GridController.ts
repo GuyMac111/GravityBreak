@@ -67,6 +67,8 @@ export class GridController extends EventHandler{
     }
 
     private onBreakBlocksEvent(message?: any): void{
+        console.log("GridController.onBreakBlocksEvent():::");
+        this.printEmptyNodes();
         let breakDelay: number = 400;
         let breakVos:BreakVO[] = message;
         for(let i:number = 0; i<breakVos.length;i++){
@@ -77,6 +79,7 @@ export class GridController extends EventHandler{
                 //clean up the nodemesh and references in advance.
                 blockMed.currentNode.currentBlock = undefined;
                 blockMed.currentNode = undefined;
+                //console.log(`BREAK:::Setting node ${blockMed.currentNode.gridCoordinate} to empty`);
                 let firstCoordOfFinalVO = breakVos[breakVos.length-1].coords.toArray()[0];
                 if(coord == firstCoordOfFinalVO){
                     //if this is the first coord of the last set of breaks, we wanna know when it's done.
@@ -85,6 +88,18 @@ export class GridController extends EventHandler{
                 blockMed.showBlockDestroyAnimation(i*breakDelay);
             }
         }
+    }
+
+    private printEmptyNodes(): void{
+        let emptyNodes:GridNode[] = [];
+        this._gridNodes.nodes.forEach((point: Phaser.Point, element: GridNode):void => {
+            if(!element.isOccupied){
+                emptyNodes.push(element);
+            }
+        });
+        emptyNodes.forEach((value:GridNode):void=>{
+            console.log(`EmptyNode: ${value.gridCoordinate}`);
+        });
     }
 
     private onFinalBlockDestroyComplete(blockMediator: BlockMediator):void {
@@ -102,6 +117,7 @@ export class GridController extends EventHandler{
                 let cascadeVO: CascadeVO = blocksToCascade[i];
                 let cascadingBlock:BlockMediator = cascadeVO.cascadingBlock;
                 let destinationNode: GridNode = this._gridNodes.nodes.getValue(cascadeVO.destination);
+                cascadingBlock.currentNode.releaseBlock();
                 cascadingBlock.currentNode = destinationNode;
                 destinationNode.currentBlock = cascadingBlock;
                 if(i == blocksToCascade.length-1){
@@ -116,6 +132,8 @@ export class GridController extends EventHandler{
     }
 
     private onLastBlockCascadeComplete() {
+        console.log("GridController.onLastBlockCascadeComplete()")
+        this.printEmptyNodes();
         this.dispatchEvent(GridEvents.BreakAndCascadeBlocksCompleteEvent, this._gridNodes);
     }
 

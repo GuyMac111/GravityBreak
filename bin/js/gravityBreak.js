@@ -210,21 +210,21 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
         }
         spawnBlockTo(gridDestination) {
             if (gridDestination.y < this.currentY) {
-                console.log("FUCKING STOP!!!");
+                console.log("STOP!!!");
             }
             this.currentY = gridDestination.y;
             this._blockView.moveToPosition(gridDestination, this.SPAWN_DURATION, this.onBlockMoveComplete.bind(this));
         }
         swapBlockTo(gridDestination) {
             if (gridDestination.y < this.currentY) {
-                console.log("FUCKING STOP!!!");
+                console.log("STOP!!!");
             }
             this.currentY = gridDestination.y;
             this._blockView.moveToPosition(gridDestination, this.SWAP_DURATION, this.onBlockMoveComplete.bind(this));
         }
         cascadeBlockTo(gridDestination) {
             if (gridDestination.y < this.currentY) {
-                console.log("FUCKING STOP!!!");
+                console.log("STOP!!!");
             }
             this.currentY = gridDestination.y;
             this._blockView.moveToPosition(gridDestination, this.CASCADE_DURATION, this.onBlockMoveComplete.bind(this));
@@ -675,6 +675,8 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
             this.spawnBlocks();
         }
         onBreakBlocksEvent(message) {
+            console.log("GridController.onBreakBlocksEvent():::");
+            this.printEmptyNodes();
             let breakDelay = 400;
             let breakVos = message;
             for (let i = 0; i < breakVos.length; i++) {
@@ -685,6 +687,7 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
                     //clean up the nodemesh and references in advance.
                     blockMed.currentNode.currentBlock = undefined;
                     blockMed.currentNode = undefined;
+                    //console.log(`BREAK:::Setting node ${blockMed.currentNode.gridCoordinate} to empty`);
                     let firstCoordOfFinalVO = breakVos[breakVos.length - 1].coords.toArray()[0];
                     if (coord == firstCoordOfFinalVO) {
                         //if this is the first coord of the last set of breaks, we wanna know when it's done.
@@ -693,6 +696,17 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
                     blockMed.showBlockDestroyAnimation(i * breakDelay);
                 }
             }
+        }
+        printEmptyNodes() {
+            let emptyNodes = [];
+            this._gridNodes.nodes.forEach((point, element) => {
+                if (!element.isOccupied) {
+                    emptyNodes.push(element);
+                }
+            });
+            emptyNodes.forEach((value) => {
+                console.log(`EmptyNode: ${value.gridCoordinate}`);
+            });
         }
         onFinalBlockDestroyComplete(blockMediator) {
             blockMediator.blockDestroyComplete = undefined;
@@ -708,6 +722,7 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
                     let cascadeVO = blocksToCascade[i];
                     let cascadingBlock = cascadeVO.cascadingBlock;
                     let destinationNode = this._gridNodes.nodes.getValue(cascadeVO.destination);
+                    cascadingBlock.currentNode.releaseBlock();
                     cascadingBlock.currentNode = destinationNode;
                     destinationNode.currentBlock = cascadingBlock;
                     if (i == blocksToCascade.length - 1) {
@@ -722,6 +737,8 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
             }
         }
         onLastBlockCascadeComplete() {
+            console.log("GridController.onLastBlockCascadeComplete()");
+            this.printEmptyNodes();
             this.dispatchEvent(GridEvents_1.GridEvents.BreakAndCascadeBlocksCompleteEvent, this._gridNodes);
         }
         onShowBlockSwapAnimationEvent(message) {
