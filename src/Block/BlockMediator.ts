@@ -10,51 +10,45 @@ export class BlockMediator extends Mediator{
     private readonly SWAP_DURATION: number = 100;
     private readonly CASCADE_DURATION: number = 200;
 
-    private currentY:number;////YOU LEFT OFF:
-    //ON THE SECOND BREAK, SOME BLOCKS ARE MOVING UP AND HAVE NO REFERENCE TO A GRIDNODE.
-    //FIRST FIND OOUT WHY THEYRE MOVING UPWARD. 
-    //WE SHOULD START BY CHECKING HERE BY STORING ALL Y VALUES. AND LOGGING WHENEVER IT'S TOLD TO MOVE UP.
-
-    
-
     private _blockView: BlockView;
     private _blockColour: BlockColour;
-    currentNode: GridNode;//Didn't want to do this, but it's the cleanest way for a BlockMediator to get it's own location 
+    private _isLastBlockToCascade: boolean = false;
+    private _cascadeDestination: Phaser.Point;
+    
+    currentNode: GridNode;
 
     blockMoveComplete: (completedBlock: BlockMediator)=>void;
     blockDestroyComplete: (completedBlock: BlockMediator)=>void;
+    blockCascadeComplete: (destination: Phaser.Point, fallenBlock: BlockMediator, isLastBlockToCascade:boolean)=>void;
 
     constructor(startingGridPosition: Phaser.Point, colour: BlockColour, injectedView:BlockView, injectedEventHub: EventHub){
         super(injectedEventHub);
         this._blockView = injectedView;
         this._blockColour = colour;
         this._blockView.initialise(startingGridPosition, this._blockColour);
-        this.currentY=startingGridPosition.y;
         this._blockView.onTouch = this.onViewTouched.bind(this);
     }
 
     spawnBlockTo(gridDestination: Phaser.Point): void{
-        if(gridDestination.y<this.currentY){
-            console.log("STOP!!!");
-        }
-        this.currentY=gridDestination.y;
         this._blockView.moveToPosition(gridDestination, this.SPAWN_DURATION,this.onBlockMoveComplete.bind(this));
     }
 
     swapBlockTo(gridDestination: Phaser.Point): void {
-        if(gridDestination.y<this.currentY){
-            console.log("STOP!!!");
-        }
-        this.currentY=gridDestination.y;
         this._blockView.moveToPosition(gridDestination, this.SWAP_DURATION,this.onBlockMoveComplete.bind(this));
     }
 
-    cascadeBlockTo(gridDestination: Phaser.Point): void {
-        if(gridDestination.y<this.currentY){
-            console.log("STOP!!!");
-        }
-        this.currentY=gridDestination.y;
-        this._blockView.moveToPosition(gridDestination, this.CASCADE_DURATION, this.onBlockMoveComplete.bind(this));
+    cascadeBlockTo(gridDestination: Phaser.Point, isLastBlockToCascade: boolean): void {
+        this._isLastBlockToCascade = isLastBlockToCascade;
+        this._cascadeDestination = gridDestination;
+        this._blockView.moveToPosition(gridDestination, this.CASCADE_DURATION, this.onCascadeMovementComplete.bind(this));
+    }
+
+    private onCascadeMovementComplete(): void{
+        let lastToCascade: boolean = this._isLastBlockToCascade;
+        let destination: Phaser.Point = this._cascadeDestination;
+        this.blockCascadeComplete(destination, this, lastToCascade);
+        this._cascadeDestination = undefined;
+        this._isLastBlockToCascade = false;
     }
 
     private onBlockMoveComplete(): void{

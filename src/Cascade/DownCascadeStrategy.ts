@@ -69,9 +69,9 @@ export class DownCascadeStrategy implements ICascadeStrategy{
     
     private getCascadeDataForNode(node: GridNode): CascadeVO{
         let distanceToCascade: number = this.getNumberOfEmptyNodesBelowNode(node,0);
-        if(node.isOccupied && distanceToCascade>0){
+        if(node.isOccupied){
             let cascadeDestination: Phaser.Point = new Phaser.Point(node.gridCoordinate.x, node.gridCoordinate.y+distanceToCascade);
-            let cascadeVO: CascadeVO = new CascadeVO(node.currentBlock, cascadeDestination);
+            let cascadeVO: CascadeVO = new CascadeVO(node.getCurrentBlock(), cascadeDestination);
             return cascadeVO;
         }else{
             return undefined;

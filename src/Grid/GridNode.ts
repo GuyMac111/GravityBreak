@@ -3,7 +3,7 @@ import { BlockMediator } from "../Block/BlockMediator";
 export class GridNode{
     private _gridCoordinate: Phaser.Point;
 
-    currentBlock: BlockMediator;
+    private _currentBlock: BlockMediator;
     private _nodeAbove: GridNode = undefined;
     private _nodeBelow: GridNode = undefined;
     private _nodeLeft: GridNode = undefined;
@@ -14,7 +14,19 @@ export class GridNode{
     }
 
     releaseBlock(): void {
-        this.currentBlock = undefined;
+        this._currentBlock.currentNode = undefined;
+        this._currentBlock = undefined;
+        console.log(`node ${this._gridCoordinate} released it's block.`);
+    }
+
+    assignBlock(block: BlockMediator): void{
+        this._currentBlock = block;
+        this._currentBlock.currentNode = this;
+        console.log(`Assigned node ${this._gridCoordinate} block: \n${this._currentBlock}`);
+    }
+
+    getCurrentBlock():BlockMediator{
+        return this._currentBlock;
     }
 
     get nodeAbove(): GridNode{
@@ -51,6 +63,6 @@ export class GridNode{
     }
 
     get isOccupied(): boolean{
-        return this.currentBlock != undefined;
+        return this._currentBlock != undefined;
     }
 }

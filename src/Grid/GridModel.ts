@@ -120,7 +120,7 @@ export class GridModel extends EventHandler{
     
     private onBreakAndCascaseBlocksCompleteEvent(message?:any): void {
         if(message instanceof NodeMesh){
-            console.log("WEVE SETTLED!!!")
+            console.log("GridModel.onBreakAndCascaseBlocksCompleteEvent()")
             this.dispatchEvent(GridEvents.EvaluateGridEvent, message);
         }else{
             console.log("Something went wrong, we shouldn't receive this without a nodemesh.");

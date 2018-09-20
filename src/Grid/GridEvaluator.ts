@@ -38,9 +38,9 @@ export class GridEvaluator extends EventHandler{
         if(this.nodeExistsInExistingBreak(gridNode,breakVOs)||!gridNode.isOccupied){
             return;
         }
-        let colour: BlockColour = gridNode.currentBlock.blockColour;
-        let totalVerticalBreak: GridNode[] = this.searchAboveNode(gridNode.nodeAbove,[], colour).concat(this.searchBelowNode(gridNode.nodeBelow, [], colour)).concat(gridNode);
-        let totalHorizontalBreak: GridNode[] = this.searchLeftNode(gridNode.nodeLeft,[], colour).concat(this.searchRightNode(gridNode.nodeRight, [], colour)).concat(gridNode);
+        let colour: BlockColour = gridNode.getCurrentBlock().blockColour;
+        let totalVerticalBreak: GridNode[] = this.searchAboveNode(gridNode.nodeAbove,[], colour).concat(gridNode).concat(this.searchBelowNode(gridNode.nodeBelow, [], colour));
+        let totalHorizontalBreak: GridNode[] = this.searchLeftNode(gridNode.nodeLeft,[], colour).concat(gridNode).concat(this.searchRightNode(gridNode.nodeRight, [], colour));
         let set:Set<Phaser.Point> = new Set<Phaser.Point>();
         
         if(totalHorizontalBreak.length >= 3){
@@ -96,7 +96,7 @@ export class GridEvaluator extends EventHandler{
             //if this node is unoccupied return what we've got so far.
             return matchedSoFar;
         }
-        if(matchGridNode.currentBlock.blockColour == colour){
+        if(matchGridNode.getCurrentBlock().blockColour == colour){
             //if this node matches so far, add it.
             matchedSoFar.push(matchGridNode);
         }else{
@@ -118,7 +118,7 @@ export class GridEvaluator extends EventHandler{
                 //if this node is unoccupied return what we've got so far.
                 return matchedSoFar;
             }
-            if(matchGridNode.currentBlock.blockColour == colour){
+            if(matchGridNode.getCurrentBlock().blockColour == colour){
                 //if this node matches so far, add it.
                 matchedSoFar.push(matchGridNode);
             }else{
@@ -143,7 +143,7 @@ export class GridEvaluator extends EventHandler{
             //if this node is unoccupied return what we've got so far.
             return matchedSoFar;
         }
-        if(matchGridNode.currentBlock.blockColour == colour){
+        if(matchGridNode.getCurrentBlock().blockColour == colour){
             //if this node matches so far, add it.
             matchedSoFar.push(matchGridNode);
         }else{
@@ -164,7 +164,7 @@ export class GridEvaluator extends EventHandler{
             //if this node is unoccupied return what we've got so far.
             return matchedSoFar;
         }
-        if(matchGridNode.currentBlock.blockColour == colour){
+        if(matchGridNode.getCurrentBlock().blockColour == colour){
             //if this node matches so far, add it.
             matchedSoFar.push(matchGridNode);
         }else{

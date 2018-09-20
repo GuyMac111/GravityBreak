@@ -51,9 +51,8 @@ export class GridController extends EventHandler{
             let block:BlockMediator = this._blockFactory.createBlockAtPosition(spawnData.spawnNode.gridCoordinate);
             block.blockMoveComplete = this.onBlockSpawnCompleteCallback.bind(this);
             //Set the node's reference here so it can be omitted from future checks
-            spawnData.destination.currentBlock = block;
+            spawnData.destination.assignBlock(block);
             //Set the blockMediators ref to the destination node so that it can access its own location for input events
-            block.currentNode = spawnData.destination;
             block.spawnBlockTo(spawnData.destination.gridCoordinate);
         }else{
             //Our grid should be full at this point
@@ -75,11 +74,11 @@ export class GridController extends EventHandler{
             let coords: Phaser.Point[] = breakVos[i].coords.toArray();
             for(let j:number = 0;j<coords.length;j++){
                 let coord: Phaser.Point = coords[j];
-                let blockMed: BlockMediator = this._gridNodes.nodes.getValue(coord).currentBlock;
+                let nodeAtCoord: GridNode = this._gridNodes.nodes.getValue(coord);
+                let blockMed: BlockMediator = nodeAtCoord.getCurrentBlock();
                 //clean up the nodemesh and references in advance.
-                blockMed.currentNode.currentBlock = undefined;
-                blockMed.currentNode = undefined;
-                //console.log(`BREAK:::Setting node ${blockMed.currentNode.gridCoordinate} to empty`);
+                nodeAtCoord.releaseBlock();
+                console.log(`BreakNode: ${nodeAtCoord.gridCoordinate}`);
                 let firstCoordOfFinalVO = breakVos[breakVos.length-1].coords.toArray()[0];
                 if(coord == firstCoordOfFinalVO){
                     //if this is the first coord of the last set of breaks, we wanna know when it's done.
@@ -100,6 +99,7 @@ export class GridController extends EventHandler{
         emptyNodes.forEach((value:GridNode):void=>{
             console.log(`EmptyNode: ${value.gridCoordinate}`);
         });
+        console.log(`You should see ${emptyNodes.length} empty spaces.`)
     }
 
     private onFinalBlockDestroyComplete(blockMediator: BlockMediator):void {
@@ -116,23 +116,30 @@ export class GridController extends EventHandler{
             for(let i:number = 0; i<blocksToCascade.length;i++){
                 let cascadeVO: CascadeVO = blocksToCascade[i];
                 let cascadingBlock:BlockMediator = cascadeVO.cascadingBlock;
-                let destinationNode: GridNode = this._gridNodes.nodes.getValue(cascadeVO.destination);
+                // let destinationNode: GridNode = this._gridNodes.nodes.getValue(cascadeVO.destination);
+                //ALL nodes cascade, even if their distance is zero.
+                //ALL nodes release their nodes when cascading begins.
                 cascadingBlock.currentNode.releaseBlock();
-                cascadingBlock.currentNode = destinationNode;
-                destinationNode.currentBlock = cascadingBlock;
-                if(i == blocksToCascade.length-1){
-                    //if it's the last block, we wanna know when it's done.
-                    cascadingBlock.blockMoveComplete = this.onLastBlockCascadeComplete.bind(this);
-                }
-                cascadingBlock.cascadeBlockTo(cascadeVO.destination);
+                cascadingBlock.blockCascadeComplete = this.onEachBlockCascadeComplete.bind(this);
+                cascadingBlock.cascadeBlockTo(cascadeVO.destination, (i == blocksToCascade.length -1));
             }
         }else{
+            console.log("Dispatching BreakAndCascadeBlocksCompleteEvent due to there being nothing to cascade.")
             this.dispatchEvent(GridEvents.BreakAndCascadeBlocksCompleteEvent, this._gridNodes);
         }
     }
 
+    private onEachBlockCascadeComplete(destinationCoord: Phaser.Point, fallenBlock: BlockMediator, wasLastBlockToCascade: boolean) {
+        //All blocks reassign to their destination node on animation complete
+        let destinationNode: GridNode = this._gridNodes.nodes.getValue(destinationCoord);
+        destinationNode.assignBlock(fallenBlock);
+        if(wasLastBlockToCascade){
+            this.onLastBlockCascadeComplete();
+        }
+    }
+
     private onLastBlockCascadeComplete() {
-        console.log("GridController.onLastBlockCascadeComplete()")
+        console.log("Dispatching BreakAndCascadeBlocksCompleteEvent due to final animation complete.")
         this.printEmptyNodes();
         this.dispatchEvent(GridEvents.BreakAndCascadeBlocksCompleteEvent, this._gridNodes);
     }
@@ -147,16 +154,28 @@ export class GridController extends EventHandler{
     private swapBlocks(firstGridCoord: Phaser.Point, secondGridCoord: Phaser.Point): void{
         let firstNode: GridNode = this._gridNodes.nodes.getValue(firstGridCoord);
         let secondNode: GridNode = this._gridNodes.nodes.getValue(secondGridCoord);
-        let holdThisForASecond: BlockMediator = firstNode.currentBlock;
-        firstNode.currentBlock = secondNode.currentBlock;
-        secondNode.currentBlock = holdThisForASecond;
-        firstNode.currentBlock.currentNode = firstNode;
-        secondNode.currentBlock.currentNode = secondNode;
+        // let holdThisForASecond: BlockMediator = firstNode.currentBlock;
+        let firstBlock: BlockMediator = firstNode.getCurrentBlock();
+        let secondBlock: BlockMediator = secondNode.getCurrentBlock();
+
+        firstNode.releaseBlock();
+        secondNode.releaseBlock();
+        firstNode.assignBlock(secondBlock);
+        secondNode.assignBlock(firstBlock);
+
+        // firstNode.currentBlock = secondNode.currentBlock;
+        // secondNode.currentBlock = holdThisForASecond;
+        // firstNode.currentBlock.currentNode = firstNode;
+        // secondNode.currentBlock.currentNode = secondNode;
         //As the nodes are now already holding their swapped values, we send the inverse and swap instruction events.
-        firstNode.currentBlock.blockMoveComplete = this.onSwapCandidateBlockMoveComplete.bind(this);
-        secondNode.currentBlock.blockMoveComplete = this.onSelectedBlockMoveComplete.bind(this);
-        firstNode.currentBlock.swapBlockTo(firstGridCoord);
-        secondNode.currentBlock.swapBlockTo(secondGridCoord);
+        // firstNode.currentBlock.blockMoveComplete = this.onSwapCandidateBlockMoveComplete.bind(this);
+        // secondNode.currentBlock.blockMoveComplete = this.onSelectedBlockMoveComplete.bind(this);
+        
+        secondBlock.blockMoveComplete = this.onSwapCandidateBlockMoveComplete.bind(this);
+        firstBlock.blockMoveComplete = this.onSelectedBlockMoveComplete.bind(this);
+
+        secondBlock.swapBlockTo(firstGridCoord);
+        firstBlock.swapBlockTo(secondGridCoord);
     }
 
 
@@ -174,13 +193,13 @@ export class GridController extends EventHandler{
 
     private onShowBlockSelectedEvent(message?:any): void{
         if(message instanceof Phaser.Point){
-            this._gridNodes.nodes.getValue(message).currentBlock.showBlockSelected();
+            this._gridNodes.nodes.getValue(message).getCurrentBlock().showBlockSelected();
         }
     }
 
     private onShowBlockUnselectedEvent(message?:any): void{
         if(message instanceof Phaser.Point){
-            this._gridNodes.nodes.getValue(message).currentBlock.showBlockUnselected();
+            this._gridNodes.nodes.getValue(message).getCurrentBlock().showBlockUnselected();
         }
     }
 }
