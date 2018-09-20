@@ -21,6 +21,7 @@ export class GridEvaluator extends EventHandler{
     }
 
     private evaluateGrid(nodeMesh: NodeMesh): void{
+        console.log("GridEvaluator.evaluateGrid()");
         let breakVOs: BreakVO[] = [];
         let nodeMeshToEvaluate: NodeMesh = nodeMesh
         nodeMeshToEvaluate.nodes.forEach((point:Phaser.Point, node: GridNode)=>{
@@ -34,7 +35,7 @@ export class GridEvaluator extends EventHandler{
     }
 
     private evaluateNode(gridNode: GridNode, breakVOs:BreakVO[]){
-        if(this.nodeExistsInExistingBreak(gridNode,breakVOs)||gridNode.currentBlock==undefined){
+        if(this.nodeExistsInExistingBreak(gridNode,breakVOs)||!gridNode.isOccupied){
             return;
         }
         let colour: BlockColour = gridNode.currentBlock.blockColour;

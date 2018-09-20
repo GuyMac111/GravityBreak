@@ -205,19 +205,31 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
             this._blockView = injectedView;
             this._blockColour = colour;
             this._blockView.initialise(startingGridPosition, this._blockColour);
+            this.currentY = startingGridPosition.y;
             this._blockView.onTouch = this.onViewTouched.bind(this);
         }
         spawnBlockTo(gridDestination) {
+            if (gridDestination.y < this.currentY) {
+                console.log("FUCKING STOP!!!");
+            }
+            this.currentY = gridDestination.y;
             this._blockView.moveToPosition(gridDestination, this.SPAWN_DURATION, this.onBlockMoveComplete.bind(this));
         }
         swapBlockTo(gridDestination) {
+            if (gridDestination.y < this.currentY) {
+                console.log("FUCKING STOP!!!");
+            }
+            this.currentY = gridDestination.y;
             this._blockView.moveToPosition(gridDestination, this.SWAP_DURATION, this.onBlockMoveComplete.bind(this));
         }
         cascadeBlockTo(gridDestination) {
+            if (gridDestination.y < this.currentY) {
+                console.log("FUCKING STOP!!!");
+            }
+            this.currentY = gridDestination.y;
             this._blockView.moveToPosition(gridDestination, this.CASCADE_DURATION, this.onBlockMoveComplete.bind(this));
         }
         onBlockMoveComplete() {
-            console.log("BlockMediator.onBlockMoveComplete()::: Block completed movement");
             if (this.blockMoveComplete != null) {
                 this.blockMoveComplete(this);
             }
@@ -232,7 +244,6 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
             this._blockView.showBlockDestroyAnimation(delay, this.onBlockDestroyComplete.bind(this));
         }
         onBlockDestroyComplete() {
-            console.log("BlockMediator.onBlockDestroyComplete()::: Block completed destroy anim");
             this._blockView.destroySpriteInstance();
             if (this.blockDestroyComplete != undefined) {
                 this.blockDestroyComplete(this);
@@ -342,7 +353,6 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
                         console.log("COLLISION");
                     }
                     nodeMesh.setValue(node.gridCoordinate, node);
-                    console.log(`NodeMeshFactory::: Created node with grid location ${node.gridCoordinate.x},${node.gridCoordinate.y}`);
                 }
             }
             return nodeMesh;
@@ -352,7 +362,6 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
             unassociatedNodeMesh.forEach(this.associateNode.bind(this));
         }
         associateNode(gridCoordinate, nodeToAssociate) {
-            console.log(`NodeMeshFactory::: Associating node at ${nodeToAssociate.gridCoordinate}`);
             this.associateAbove(nodeToAssociate);
             this.associateBelow(nodeToAssociate);
             this.associateLeft(nodeToAssociate);
@@ -362,10 +371,8 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
             if (nodeToAssociate.gridCoordinate.y > 0) {
                 //If it's not in the top row
                 nodeToAssociate.nodeAbove = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x, nodeToAssociate.gridCoordinate.y - 1));
-                console.log(`NodeMeshFactory::: The node above node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeAbove.gridCoordinate}`);
             }
             else {
-                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is at the top. Creating spawn node above.`);
                 let spawnNodeLocation = new Phaser.Point(nodeToAssociate.gridCoordinate.x, -1);
                 this.createSecretSpawnNode(spawnNodeLocation);
             }
@@ -374,10 +381,8 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
             if (nodeToAssociate.gridCoordinate.y < this._dimensionsInNodes.y - 1) {
                 //If it's not in the bottom row
                 nodeToAssociate.nodeBelow = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x, nodeToAssociate.gridCoordinate.y + 1));
-                console.log(`NodeMeshFactory::: The node below node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeBelow.gridCoordinate}`);
             }
             else {
-                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is at the bottom. Creating spawn node below.`);
                 let spawnNodeLocation = new Phaser.Point(nodeToAssociate.gridCoordinate.x, this._dimensionsInNodes.y);
                 this.createSecretSpawnNode(spawnNodeLocation);
             }
@@ -386,10 +391,8 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
             if (nodeToAssociate.gridCoordinate.x > 0) {
                 //If it's not in the left-most row
                 nodeToAssociate.nodeLeft = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x - 1, nodeToAssociate.gridCoordinate.y));
-                console.log(`NodeMeshFactory::: The node to the left of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeLeft.gridCoordinate}`);
             }
             else {
-                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the left. Creating spawn node left.`);
                 let spawnNodeLocation = new Phaser.Point(-1, nodeToAssociate.gridCoordinate.y);
                 this.createSecretSpawnNode(spawnNodeLocation);
             }
@@ -397,12 +400,9 @@ define("Grid/NodeMeshFactory", ["require", "exports", "Grid/GridNode", "typescri
         associateRight(nodeToAssociate) {
             if (nodeToAssociate.gridCoordinate.x < this._dimensionsInNodes.x - 1) {
                 //If it's not in the right-most row
-                ///IT WAS HEREE::::::: LOOOL. 
                 nodeToAssociate.nodeRight = this._nodeMesh.getValue(new Phaser.Point(nodeToAssociate.gridCoordinate.x + 1, nodeToAssociate.gridCoordinate.y));
-                console.log(`NodeMeshFactory::: The node to the right of node ${nodeToAssociate.gridCoordinate} is set to ${nodeToAssociate.nodeRight.gridCoordinate}`);
             }
             else {
-                console.log(`NodeMeshFactory::: The node ${nodeToAssociate.gridCoordinate} is flush to the right. Creating spawn node left.`);
                 let spawnNodeLocation = new Phaser.Point(this._dimensionsInNodes.x, nodeToAssociate.gridCoordinate.y);
                 this.createSecretSpawnNode(spawnNodeLocation);
             }
@@ -663,12 +663,11 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
                 spawnData.destination.currentBlock = block;
                 //Set the blockMediators ref to the destination node so that it can access its own location for input events
                 block.currentNode = spawnData.destination;
-                console.log(`GridController.spawnBlocks()::: Block move started (initial position ${spawnData.spawnNode.gridCoordinate.x},${spawnData.spawnNode.gridCoordinate.y})`);
                 block.spawnBlockTo(spawnData.destination.gridCoordinate);
             }
             else {
                 //Our grid should be full at this point
-                console.log("GridController.spawnBlocks()::: Our grid is full.....supposedly.");
+                console.log("GridController.spawnBlocks()::: Our grid is full");
             }
         }
         onBlockSpawnCompleteCallback(completedBlock) {
@@ -681,11 +680,11 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
             for (let i = 0; i < breakVos.length; i++) {
                 let coords = breakVos[i].coords.toArray();
                 for (let j = 0; j < coords.length; j++) {
-                    let blockMed = this._gridNodes.nodes.getValue(coords[j]).currentBlock;
+                    let coord = coords[j];
+                    let blockMed = this._gridNodes.nodes.getValue(coord).currentBlock;
                     //clean up the nodemesh and references in advance.
                     blockMed.currentNode.currentBlock = undefined;
                     blockMed.currentNode = undefined;
-                    let coord = coords[j];
                     let firstCoordOfFinalVO = breakVos[breakVos.length - 1].coords.toArray()[0];
                     if (coord == firstCoordOfFinalVO) {
                         //if this is the first coord of the last set of breaks, we wanna know when it's done.
@@ -697,10 +696,11 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
         }
         onFinalBlockDestroyComplete(blockMediator) {
             blockMediator.blockDestroyComplete = undefined;
-            console.log("We're done breaking for now");
+            console.log("GridController.onFinalBlockDestroyComplete()");
             this.cascadeBlocks();
         }
         cascadeBlocks() {
+            console.log("GridController.cascadeBlocks()");
             let cascadeStrategy = this._cascadeStrategyProvider.cascadeStrategy;
             let blocksToCascade = cascadeStrategy.blocksToCascade;
             if (blocksToCascade.length > 0) {
@@ -708,32 +708,21 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
                     let cascadeVO = blocksToCascade[i];
                     let cascadingBlock = cascadeVO.cascadingBlock;
                     let destinationNode = this._gridNodes.nodes.getValue(cascadeVO.destination);
-                    destinationNode.currentBlock = cascadingBlock;
                     cascadingBlock.currentNode = destinationNode;
+                    destinationNode.currentBlock = cascadingBlock;
                     if (i == blocksToCascade.length - 1) {
                         //if it's the last block, we wanna know when it's done.
                         cascadingBlock.blockMoveComplete = this.onLastBlockCascadeComplete.bind(this);
                     }
                     cascadingBlock.cascadeBlockTo(cascadeVO.destination);
                 }
-                // blocksToCascade.forEach((cascadeVO: CascadeVO, index: number):void=>{
-                //     let cascadingBlock:BlockMediator = cascadeVO.cascadingBlock;
-                //     let destinationNode = this._gridNodes.nodes.getValue(cascadeVO.destination)
-                //     destinationNode.currentBlock = cascadingBlock;
-                //     cascadingBlock.currentNode = destinationNode;
-                //     if(index == blocksToCascade.length-1){
-                //         //if it's the last block
-                //         cascadingBlock.blockMoveComplete = this.onLastBlockCascadeComplete.bind(this);
-                //     }
-                //     cascadingBlock.cascadeBlockTo(cascadeVO.destination);
-                // });
             }
             else {
-                this.dispatchEvent(GridEvents_1.GridEvents.BreakAndCascadeBlocksCompleteEvent);
+                this.dispatchEvent(GridEvents_1.GridEvents.BreakAndCascadeBlocksCompleteEvent, this._gridNodes);
             }
         }
         onLastBlockCascadeComplete() {
-            this.dispatchEvent(GridEvents_1.GridEvents.BreakAndCascadeBlocksCompleteEvent);
+            this.dispatchEvent(GridEvents_1.GridEvents.BreakAndCascadeBlocksCompleteEvent, this._gridNodes);
         }
         onShowBlockSwapAnimationEvent(message) {
             if (message instanceof SwapVO_1.SwapVO) {
@@ -767,20 +756,18 @@ define("Grid/GridController", ["require", "exports", "Grid/NodeMeshFactory", "Ca
         }
         onShowBlockSelectedEvent(message) {
             if (message instanceof Phaser.Point) {
-                console.log(`GridController.onShowBlockSelectedEvent()::: Selecting block ${message}`);
                 this._gridNodes.nodes.getValue(message).currentBlock.showBlockSelected();
             }
         }
         onShowBlockUnselectedEvent(message) {
             if (message instanceof Phaser.Point) {
-                console.log(`GridController.onShowBlockUnselectedEvent()::: Unselecting block ${message}`);
                 this._gridNodes.nodes.getValue(message).currentBlock.showBlockUnselected();
             }
         }
     }
     exports.GridController = GridController;
 });
-define("Grid/GridModel", ["require", "exports", "System/Events/EventHandler", "Grid/GridEvents", "Grid/VOs/SwapVO"], function (require, exports, EventHandler_3, GridEvents_2, SwapVO_2) {
+define("Grid/GridModel", ["require", "exports", "System/Events/EventHandler", "Grid/GridEvents", "Grid/VOs/SwapVO", "Grid/NodeMesh"], function (require, exports, EventHandler_3, GridEvents_2, SwapVO_2, NodeMesh_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class GridModel extends EventHandler_3.EventHandler {
@@ -874,19 +861,24 @@ define("Grid/GridModel", ["require", "exports", "System/Events/EventHandler", "G
             this._swapCandidateBlockSwapAnimationComplete = false;
         }
         onGridEvaluationSuccessEvent(message) {
-            this.resetAnimationFlags();
+            this.resetSelectedAndSwapCoords();
             this.addEventListener(GridEvents_2.GridEvents.BreakAndCascadeBlocksCompleteEvent, this.onBreakAndCascaseBlocksCompleteEvent.bind(this));
             this.dispatchEvent(GridEvents_2.GridEvents.BreakAndCascadeBlocksEvent, message);
         }
-        onBreakAndCascaseBlocksCompleteEvent() {
-            console.log("WEVE SETTLED!!!");
-            // this.dispatchEvent(GridEvents.EvaluateGridEvent);
+        onBreakAndCascaseBlocksCompleteEvent(message) {
+            if (message instanceof NodeMesh_2.NodeMesh) {
+                console.log("WEVE SETTLED!!!");
+                this.dispatchEvent(GridEvents_2.GridEvents.EvaluateGridEvent, message);
+            }
+            else {
+                console.log("Something went wrong, we shouldn't receive this without a nodemesh.");
+            }
         }
         onGridEvaluationNegativeEvent(message) {
             //this should be deferred until the swapback has been completed but we'll live with it
             this._gridEvaluationInProgress = false;
-            //bogus way of checking that this evaluation is a result of a swap.
-            if (this._swapCandidateCoord != undefined && this._currentlySelectedCoord) {
+            if (this._swapCandidateCoord != undefined && this._currentlySelectedCoord != undefined) {
+                //bogus way of checking that this evaluation is a result of a swap.
                 this.removeGridEvaluationEventListeners();
                 this.dispatchEvent(GridEvents_2.GridEvents.ShowBlockSwapAnimationEvent, new SwapVO_2.SwapVO(this._currentlySelectedCoord, this.swapCandidateCoord));
                 this.resetSelectedAndSwapCoords;
@@ -936,7 +928,7 @@ define("Input/InputController", ["require", "exports", "System/Events/EventHandl
     }
     exports.InputController = InputController;
 });
-define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/BreakVO", "typescript-collections", "System/Events/EventHandler", "Grid/GridEvents"], function (require, exports, NodeMesh_2, BreakVO_1, typescript_collections_3, EventHandler_5, GridEvents_3) {
+define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/BreakVO", "typescript-collections", "System/Events/EventHandler", "Grid/GridEvents"], function (require, exports, NodeMesh_3, BreakVO_1, typescript_collections_3, EventHandler_5, GridEvents_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class GridEvaluator extends EventHandler_5.EventHandler {
@@ -945,11 +937,12 @@ define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/B
             this.addEventListener(GridEvents_3.GridEvents.EvaluateGridEvent, this.onEvaluateGridEvent.bind(this));
         }
         onEvaluateGridEvent(message) {
-            if (message instanceof NodeMesh_2.NodeMesh) {
+            if (message instanceof NodeMesh_3.NodeMesh) {
                 this.evaluateGrid(message);
             }
         }
         evaluateGrid(nodeMesh) {
+            console.log("GridEvaluator.evaluateGrid()");
             let breakVOs = [];
             let nodeMeshToEvaluate = nodeMesh;
             nodeMeshToEvaluate.nodes.forEach((point, node) => {
@@ -963,7 +956,7 @@ define("Grid/GridEvaluator", ["require", "exports", "Grid/NodeMesh", "Grid/VOs/B
             }
         }
         evaluateNode(gridNode, breakVOs) {
-            if (this.nodeExistsInExistingBreak(gridNode, breakVOs) || gridNode.currentBlock == undefined) {
+            if (this.nodeExistsInExistingBreak(gridNode, breakVOs) || !gridNode.isOccupied) {
                 return;
             }
             let colour = gridNode.currentBlock.blockColour;

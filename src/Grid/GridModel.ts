@@ -113,21 +113,25 @@ export class GridModel extends EventHandler{
     }
 
     private onGridEvaluationSuccessEvent(message?:any): void {
-        this.resetAnimationFlags();
+        this.resetSelectedAndSwapCoords();
         this.addEventListener(GridEvents.BreakAndCascadeBlocksCompleteEvent, this.onBreakAndCascaseBlocksCompleteEvent.bind(this));
         this.dispatchEvent(GridEvents.BreakAndCascadeBlocksEvent, message);
     }
     
-    private onBreakAndCascaseBlocksCompleteEvent(): void {
-        console.log("WEVE SETTLED!!!")
-        // this.dispatchEvent(GridEvents.EvaluateGridEvent);
+    private onBreakAndCascaseBlocksCompleteEvent(message?:any): void {
+        if(message instanceof NodeMesh){
+            console.log("WEVE SETTLED!!!")
+            this.dispatchEvent(GridEvents.EvaluateGridEvent, message);
+        }else{
+            console.log("Something went wrong, we shouldn't receive this without a nodemesh.");
+        }
     }
 
     private onGridEvaluationNegativeEvent(message?:any): void {
         //this should be deferred until the swapback has been completed but we'll live with it
         this._gridEvaluationInProgress = false;
-        //bogus way of checking that this evaluation is a result of a swap.
-        if(this._swapCandidateCoord!=undefined && this._currentlySelectedCoord){
+        if(this._swapCandidateCoord!=undefined && this._currentlySelectedCoord!=undefined){
+            //bogus way of checking that this evaluation is a result of a swap.
             this.removeGridEvaluationEventListeners();
             this.dispatchEvent(GridEvents.ShowBlockSwapAnimationEvent, new SwapVO(this._currentlySelectedCoord, this.swapCandidateCoord));
             this.resetSelectedAndSwapCoords;
