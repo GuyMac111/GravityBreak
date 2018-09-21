@@ -3,6 +3,8 @@ import { EventHub } from "../System/Events/EventHub";
 import { GridEvents } from "./GridEvents";
 import { SwapVO } from "./VOs/SwapVO";
 import { NodeMesh } from "./NodeMesh";
+import { Input } from "phaser";
+import { InputEvents } from "../Input/InputEvents";
 
 export class GridModel extends EventHandler{
     //hmmmmmm.... Maybe 'InputModel' insted???
@@ -10,43 +12,48 @@ export class GridModel extends EventHandler{
     private _swapCandidateCoord: Phaser.Point;
     private _selectedBlockSwapAnimationComplete: boolean = false;
     private _swapCandidateBlockSwapAnimationComplete: boolean = false;
-    private _gridEvaluationInProgress: boolean = false;
 
     constructor(injectedEventHub: EventHub){
         super(injectedEventHub);
+        this.addEventListener(GridEvents.InitialiseGridCompleteEvent, this.onGridInitialisedEvent.bind(this));
     }
 
     get hasCurrentlySelectedBlock():  boolean{
         return this._currentlySelectedCoord != undefined;
     }
 
-    get gridEvaluationInProgress(): boolean {
-        return this._gridEvaluationInProgress;
-    }
-
-    set currentlySelectedCoord(coord: Phaser.Point){
+    selectBlock(coord: Phaser.Point): void{
         if(this._currentlySelectedCoord==undefined){
             this._currentlySelectedCoord = coord;
             this.dispatchEvent(GridEvents.ShowBlockSelectedEvent, this._currentlySelectedCoord);
+        }else if (coord == this._currentlySelectedCoord){
+            this.deselectAll();
         }else{
-            console.log("GridModel.set currentlySelectedCoord::: Something went wrong. Why are we trying to set the currSelectedCoord when there's already one?");
+            if(this.blockIsLegalSwapCandidate(coord)){
+                this._swapCandidateCoord = coord;
+                let payload: SwapVO = new SwapVO(this._currentlySelectedCoord, this._swapCandidateCoord);
+                this.dispatchEvent(InputEvents.DisableInputsEvent);
+                this.addBlockSwapEventListeners();
+                this.dispatchEvent(GridEvents.ShowBlockSwapAnimationEvent, payload);
+            }else{
+                this.deselectAll();
+            }
         }
     }
 
-    //Too much responsibility in here
-    set swapCandidateCoord(coord: Phaser.Point){
-        if(this._swapCandidateCoord == undefined && coord != this._currentlySelectedCoord && this.blockIsLegalSwapCandidate(coord)){
-            this._swapCandidateCoord = coord;
-            let payload: SwapVO = new SwapVO(this._currentlySelectedCoord, this._swapCandidateCoord);
-            this.addBlockSwapEventListeners();
-            this.dispatchEvent(GridEvents.ShowBlockUnselectedEvent, this._currentlySelectedCoord);
-            this.dispatchEvent(GridEvents.ShowBlockSwapAnimationEvent, payload);
-        }else{
-            console.log("GridModel.set swapCandidateCoord::: Something went wrong. Why are we trying to set the swapCandidateCoord when there's already one?");
+    private deselectAll():void{
+        let resetSelectedCoord: Phaser.Point = this._currentlySelectedCoord;
+        let resetSwapCoord: Phaser.Point = this._swapCandidateCoord;
+        this.resetSelectedAndSwapCoords();
+        if(resetSelectedCoord!=undefined){
+            this.dispatchEvent(GridEvents.ShowBlockUnselectedEvent, resetSelectedCoord);
+        }
+        if(resetSwapCoord!=undefined){
+            this.dispatchEvent(GridEvents.ShowBlockUnselectedEvent, resetSwapCoord);
         }
     }
 
-    blockIsLegalSwapCandidate(swapCandidateCoord: Phaser.Point): boolean{
+    private blockIsLegalSwapCandidate(swapCandidateCoord: Phaser.Point): boolean{
         if(swapCandidateCoord.x == this._currentlySelectedCoord.x){
             if(swapCandidateCoord.y == this._currentlySelectedCoord.y+1 || swapCandidateCoord.y == this._currentlySelectedCoord.y-1){
                 return true;
@@ -60,6 +67,10 @@ export class GridModel extends EventHandler{
         return false;
     }
 
+    private onGridInitialisedEvent(): void{
+        this.dispatchEvent(InputEvents.EnableInputsEvent);
+    }
+
     private addBlockSwapEventListeners(): void {
         this.addEventListener(GridEvents.SelectedBlockSwapAnimationCompleteEvent, this.onSelectedBlockSwapComplete.bind(this));
         this.addEventListener(GridEvents.SwapCandidateBlockSwapAnimationCompleteEvent, this.onSwapCandidateBlockSwapComplete.bind(this));
@@ -70,27 +81,26 @@ export class GridModel extends EventHandler{
         this.removeEventListener(GridEvents.SwapCandidateBlockSwapAnimationCompleteEvent);
     }
     
-    private onSelectedBlockSwapComplete(message?:any): void {
+    private onSelectedBlockSwapComplete(): void {
         this._selectedBlockSwapAnimationComplete = true;
         if(this._swapCandidateBlockSwapAnimationComplete && this._selectedBlockSwapAnimationComplete){
-            this.handleBothBlockSwapAnimationsComplete(message);
+            this.handleBothBlockSwapAnimationsComplete();
         }
     }
 
-    private onSwapCandidateBlockSwapComplete(message?:any): void {
+    private onSwapCandidateBlockSwapComplete(): void {
         this._swapCandidateBlockSwapAnimationComplete = true;
         if(this._selectedBlockSwapAnimationComplete && this._swapCandidateBlockSwapAnimationComplete){
-            this.handleBothBlockSwapAnimationsComplete(message);
+            this.handleBothBlockSwapAnimationsComplete();
         }
     }
 
-    private handleBothBlockSwapAnimationsComplete(nodeMesh: NodeMesh): void{
-        this._gridEvaluationInProgress = true;
+    private handleBothBlockSwapAnimationsComplete(): void{
         this.resetAnimationFlags();
         this.removeBlockSwapEventListeners();
-        this.addGridEvaluationEventListeners();
         this.dispatchEvent(GridEvents.BlockSwapAnimationCompleteEvent);
-        this.dispatchEvent(GridEvents.EvaluateGridEvent, nodeMesh);
+        this.addGridEvaluationEventListeners();
+        this.dispatchEvent(GridEvents.EvaluateGridEvent);
     }
 
     get currentlySelectedCoord(): Phaser.Point{
@@ -100,7 +110,6 @@ export class GridModel extends EventHandler{
     get swapCandidateCoord(): Phaser.Point{
         return this._swapCandidateCoord;
     }
-
     
     resetSelectedAndSwapCoords(): void{
         this._swapCandidateCoord = undefined;
@@ -114,28 +123,48 @@ export class GridModel extends EventHandler{
 
     private onGridEvaluationSuccessEvent(message?:any): void {
         this.resetSelectedAndSwapCoords();
+        this.removeGridEvaluationEventListeners();
         this.addEventListener(GridEvents.BreakAndCascadeBlocksCompleteEvent, this.onBreakAndCascaseBlocksCompleteEvent.bind(this));
         this.dispatchEvent(GridEvents.BreakAndCascadeBlocksEvent, message);
     }
     
     private onBreakAndCascaseBlocksCompleteEvent(message?:any): void {
-        if(message instanceof NodeMesh){
-            console.log("GridModel.onBreakAndCascaseBlocksCompleteEvent()")
-            this.dispatchEvent(GridEvents.EvaluateGridEvent, message);
-        }else{
-            console.log("Something went wrong, we shouldn't receive this without a nodemesh.");
-        }
+        console.log("GridModel.onBreakAndCascaseBlocksCompleteEvent()")
+        this.addGridEvaluationEventListeners();
+        this.dispatchEvent(GridEvents.EvaluateGridEvent);
     }
 
     private onGridEvaluationNegativeEvent(message?:any): void {
-        //this should be deferred until the swapback has been completed but we'll live with it
-        this._gridEvaluationInProgress = false;
-        if(this._swapCandidateCoord!=undefined && this._currentlySelectedCoord!=undefined){
+        this.removeGridEvaluationEventListeners();
+        let negativeEvaluationWasResultOfASwap: boolean = this._currentlySelectedCoord!=undefined&&this._swapCandidateCoord!=undefined;
+        let selectedCoord: Phaser.Point = this._currentlySelectedCoord;
+        let swapCandidateCoord: Phaser.Point = this._swapCandidateCoord;
+        this.resetSelectedAndSwapCoords;
+        if(negativeEvaluationWasResultOfASwap){
             //bogus way of checking that this evaluation is a result of a swap.
-            this.removeGridEvaluationEventListeners();
-            this.dispatchEvent(GridEvents.ShowBlockSwapAnimationEvent, new SwapVO(this._currentlySelectedCoord, this.swapCandidateCoord));
+            this.dispatchEvent(GridEvents.ShowBlockSwapAnimationEvent, new SwapVO(selectedCoord, swapCandidateCoord));
+            this.deselectAll();
+            this.dispatchEvent(InputEvents.EnableInputsEvent);
+        }else{
             this.resetSelectedAndSwapCoords;
+            this.addEventListener(GridEvents.RefillGridCompleteEvent,this.onRefillGridCompleteEvent.bind(this));
+            this.dispatchEvent(GridEvents.RefillGridEvent);
         }
+    }
+
+    private onRefillGridCompleteEvent(): void{
+        this.removeEventListener(GridEvents.RefillGridCompleteEvent);
+        this.addRefillEvaluationEventListeners();
+        this.dispatchEvent(GridEvents.EvaluateGridEvent);
+    }
+    
+    private addRefillEvaluationEventListeners(): void{
+        this.addEventListener(GridEvents.GridEvaluationPositiveEvent, this.onGridEvaluationSuccessEvent.bind(this));
+        this.addEventListener(GridEvents.GridEvaluationNegativeEvent, this.onRefillEvaluationNegativeEvent.bind(this));
+    }
+
+    private onRefillEvaluationNegativeEvent(): void{
+        this.dispatchEvent(InputEvents.EnableInputsEvent);
     }
 
     private addGridEvaluationEventListeners(): void{

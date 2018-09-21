@@ -7,6 +7,8 @@ import { GridEvents } from "../Grid/GridEvents";
 import { InputController } from "../Input/InputController";
 import { GridModel } from "../Grid/GridModel";
 import { GridEvaluator } from "../Grid/GridEvaluator";
+import { NodeMeshFactory } from "../Grid/NodeMeshFactory";
+import { NodeMesh } from "../Grid/NodeMesh";
 
 export class Startup{
     private _game: Phaser.Game;
@@ -63,9 +65,10 @@ export class Startup{
     }
 
     private bootstrapGrid(): void{
-        let gridEvaluator:GridEvaluator = new GridEvaluator(this._systemModel.eventHub);
+        let nodeMesh: NodeMesh = new NodeMeshFactory().createNodeMesh(new Phaser.Point(9,9));
+        let gridEvaluator:GridEvaluator = new GridEvaluator(this._systemModel.eventHub, nodeMesh);
         this._systemModel.gridEvaluator = gridEvaluator;
-        let gridController: GridController = new GridController(9,9,this._systemModel.blockFactory, this._systemModel.eventHub);
+        let gridController: GridController = new GridController(9,9,this._systemModel.blockFactory, this._systemModel.eventHub, nodeMesh);
         this._systemModel.gridController = gridController;
     }
 

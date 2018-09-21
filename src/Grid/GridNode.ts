@@ -16,13 +16,11 @@ export class GridNode{
     releaseBlock(): void {
         this._currentBlock.currentNode = undefined;
         this._currentBlock = undefined;
-        console.log(`node ${this._gridCoordinate} released it's block.`);
     }
 
     assignBlock(block: BlockMediator): void{
         this._currentBlock = block;
         this._currentBlock.currentNode = this;
-        console.log(`Assigned node ${this._gridCoordinate} block: \n${this._currentBlock}`);
     }
 
     getCurrentBlock():BlockMediator{

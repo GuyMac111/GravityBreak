@@ -6,7 +6,8 @@ import { BlockEvents } from "./BlockEvents";
 import { GridNode } from "../Grid/GridNode";
 
 export class BlockMediator extends Mediator{
-    private readonly SPAWN_DURATION: number = 10;
+    private readonly SPAWN_DURATION: number = 7;
+    private readonly RESPAWN_DURATION: number = 50;
     private readonly SWAP_DURATION: number = 100;
     private readonly CASCADE_DURATION: number = 200;
 
@@ -31,6 +32,10 @@ export class BlockMediator extends Mediator{
 
     spawnBlockTo(gridDestination: Phaser.Point): void{
         this._blockView.moveToPosition(gridDestination, this.SPAWN_DURATION,this.onBlockMoveComplete.bind(this));
+    }
+
+    respawnBlockTo(gridDestination: Phaser.Point): void{
+        this._blockView.moveToPosition(gridDestination, this.RESPAWN_DURATION,this.onBlockMoveComplete.bind(this));
     }
 
     swapBlockTo(gridDestination: Phaser.Point): void {

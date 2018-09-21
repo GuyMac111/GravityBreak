@@ -9,22 +9,22 @@ import { GridEvents } from "./GridEvents";
 
 export class GridEvaluator extends EventHandler{
 
-    constructor(injectedEventHub: EventHub){
+    private _gridNodes: NodeMesh;
+
+    constructor(injectedEventHub: EventHub, injectedNodeMesh: NodeMesh){
         super(injectedEventHub);
+        this._gridNodes = injectedNodeMesh;
         this.addEventListener(GridEvents.EvaluateGridEvent, this.onEvaluateGridEvent.bind(this));
     }
 
-    private onEvaluateGridEvent(message?:any): void{
-        if(message instanceof NodeMesh){
-            this.evaluateGrid(message);
-        }
+    private onEvaluateGridEvent(): void{
+        this.evaluateGrid();
     }
 
-    private evaluateGrid(nodeMesh: NodeMesh): void{
+    private evaluateGrid(): void{
         console.log("GridEvaluator.evaluateGrid()");
         let breakVOs: BreakVO[] = [];
-        let nodeMeshToEvaluate: NodeMesh = nodeMesh
-        nodeMeshToEvaluate.nodes.forEach((point:Phaser.Point, node: GridNode)=>{
+        this._gridNodes.nodes.forEach((point:Phaser.Point, node: GridNode)=>{
             this.evaluateNode(node, breakVOs);
         });
         if(breakVOs.length>0){

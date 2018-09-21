@@ -3,6 +3,7 @@ import { EventHub } from "../System/Events/EventHub";
 import { GridEvents } from "../Grid/GridEvents";
 import { BlockEvents } from "../Block/BlockEvents";
 import { GridModel } from "../Grid/GridModel";
+import { InputEvents } from "./InputEvents";
 
 export class InputController extends EventHandler{
     private _gridModel: GridModel;
@@ -10,24 +11,20 @@ export class InputController extends EventHandler{
     constructor(injectedEventHub: EventHub, injectedGridModel: GridModel){
         super(injectedEventHub);
         this._gridModel = injectedGridModel;
+        this.addEventListener(InputEvents.EnableInputsEvent, this.onEnableInputsEvent.bind(this));
+        this.addEventListener(InputEvents.DisableInputsEvent, this.onDisableInputsEvent.bind(this));
+    }
+
+    private onEnableInputsEvent(): void{
         this.addEventListener(BlockEvents.BlockTouchedEvent, this.onBlockTouched.bind(this));
     }
 
+    private onDisableInputsEvent(): void{
+        this.removeEventListener(BlockEvents.BlockTouchedEvent);
+    }
+
     private onBlockTouched(message?:any):void {
-        if(!(message instanceof Phaser.Point)){
-            this.printMessageIssue(message);
-        }else{
-            if(this._gridModel.gridEvaluationInProgress){
-                //Bad, I know. Using this flag as a caveman state. Preventing touch in illegal states.
-                return;
-            }
-            let gridLocationOfTouch: Phaser.Point = message;
-            if(!this._gridModel.hasCurrentlySelectedBlock){
-                this._gridModel.currentlySelectedCoord = gridLocationOfTouch;
-            }else if(this._gridModel.swapCandidateCoord==undefined){
-                this._gridModel.swapCandidateCoord = gridLocationOfTouch;
-            }
-        }
+        this._gridModel.selectBlock(message);
     }
 
     private printMessageIssue(message:any){
