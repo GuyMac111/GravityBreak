@@ -33,6 +33,7 @@ export class GridModel extends EventHandler{
                 this._swapCandidateCoord = coord;
                 let payload: SwapVO = new SwapVO(this._currentlySelectedCoord, this._swapCandidateCoord);
                 this.dispatchEvent(InputEvents.DisableInputsEvent);
+                this.dispatchEvent(GridEvents.ShowBlockUnselectedEvent, this._currentlySelectedCoord);
                 this.addBlockSwapEventListeners();
                 this.dispatchEvent(GridEvents.ShowBlockSwapAnimationEvent, payload);
             }else{

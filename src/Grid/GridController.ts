@@ -12,13 +12,14 @@ import { GridNode } from "./GridNode";
 import { SwapVO } from "./VOs/SwapVO";
 import { BreakVO } from "./VOs/BreakVO";
 import { CascadeVO } from "./VOs/CascadeVO";
+import { ScoreEvents } from "../Score/ScoreEvents";
 
 export class GridController extends EventHandler{
     private _gridNodes: NodeMesh;
     private _cascadeStrategyProvider: CascadeStrategyProvider;
     private _blockFactory: BlockFactory;
     
-    constructor(nodesHigh:number, nodesWide:number, injectedBlockFactory: BlockFactory, injectedEventHub: EventHub, injectedNodeMesh: NodeMesh){
+    constructor(injectedBlockFactory: BlockFactory, injectedEventHub: EventHub, injectedNodeMesh: NodeMesh, injectedCascadeStrategyProvider: CascadeStrategyProvider){
         super(injectedEventHub);
         this.addEventListener(GridEvents.InitialiseGridEvent, this.onInitialiseEvent.bind(this));
         this.addEventListener(GridEvents.ShowBlockSelectedEvent, this.onShowBlockSelectedEvent.bind(this));
@@ -26,12 +27,10 @@ export class GridController extends EventHandler{
         this.addEventListener(GridEvents.ShowBlockSwapAnimationEvent, this.onShowBlockSwapAnimationEvent.bind(this));
         this.addEventListener(GridEvents.BreakAndCascadeBlocksEvent, this.onBreakBlocksEvent.bind(this));
         this.addEventListener(GridEvents.RefillGridEvent, this.onRefillGridEvent.bind(this));
-
-        let dimensionsInNodes = new Phaser.Point(nodesWide, nodesHigh);
         this._blockFactory = injectedBlockFactory;
         //TODO: move instantiation of NodeMeshFactory into bootstrap and 'inject'
         this._gridNodes = injectedNodeMesh;
-        this._cascadeStrategyProvider = new CascadeStrategyProvider(this._gridNodes);
+        this._cascadeStrategyProvider = injectedCascadeStrategyProvider;
     }
 
     private onInitialiseEvent(): void{
@@ -66,6 +65,7 @@ export class GridController extends EventHandler{
         console.log("GridController.onBreakBlocksEvent():::");
         let breakDelay: number = 400;
         let breakVos:BreakVO[] = message;
+        this.dispatchEvent(ScoreEvents.UpdateScoreForBlocksBrokenEvent, breakVos);
         for(let i:number = 0; i<breakVos.length;i++){
             let coords: Phaser.Point[] = breakVos[i].coords.toArray();
             for(let j:number = 0;j<coords.length;j++){
@@ -76,8 +76,8 @@ export class GridController extends EventHandler{
                 console.log(`BreakNode: ${nodeAtCoord.gridCoordinate}`);
                 let firstCoordOfFinalVO = breakVos[breakVos.length-1].coords.toArray()[0];
                 if(coord == firstCoordOfFinalVO){
-                    //We came up with a better way to do this in cascadeBlocks() (this, being figure out when we're done)
-                    blockMed.blockDestroyComplete = this.onFinalBlockDestroyComplete.bind(this);
+                    //We came up with a better way to do this in cascadeBlocks() ("this", being figure out when we're done)
+                    blockMed.blockDestroyComplete = this.onFinalBlockDestroyComplete.bind(this)
                 }
                 blockMed.showBlockDestroyAnimation(i*breakDelay);
             }

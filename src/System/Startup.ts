@@ -9,6 +9,13 @@ import { GridModel } from "../Grid/GridModel";
 import { GridEvaluator } from "../Grid/GridEvaluator";
 import { NodeMeshFactory } from "../Grid/NodeMeshFactory";
 import { NodeMesh } from "../Grid/NodeMesh";
+import { GravityStateModel } from "../Gravity/GravityStateModel";
+import { CascadeStrategyProvider } from "../Cascade/CascadeStrategyProvider";
+import { PlanetView } from "../Background/PlanetView";
+import { PlanetMediator } from "../Background/PlanetMediator";
+import { ControlPanelView } from "../ControlPanel/ControlPanelView";
+import { ControlPanelMediator } from "../ControlPanel/ControlPanelMediator";
+import { ScoreModel } from "../Score/ScoreModel";
 
 export class Startup{
     private _game: Phaser.Game;
@@ -16,10 +23,6 @@ export class Startup{
     //hmmmmm: Does this need to exist?.......so far....no.
     private _systemModel: SystemModel;
     ////
-
-    ///Perhaps we should separate Startup into 1: Bootstrap and 2: Initialise
-    ///Don't really intend to create a full context so we can keep things close in here for the time being
-    ///and then decide to split things apart if things get too tightly coupled
     
     constructor(game: Phaser.Game){
         this._game = game;
@@ -36,23 +39,35 @@ export class Startup{
     }
     
     private bootstrapGame():void {
-        //Order is starting to become a concern here. Maaay need to rethink this in terms of categories.
         this.bootstrapEventHub();
         this.bootstrapModels();
+        this.bootstrapNodes();
         this.bootstrapInput();
+        this.bootstrapCascadeStrategy();
+        this.bootstrapBackground();
         this.bootstrapBlockFactory();
         this.bootstrapGrid();
+        this.bootstrapControlPanel();
     }
 
     private bootstrapEventHub():void {
-        let eventHub: EventHub = new EventHub();
-        this._systemModel.eventHub = eventHub;
+        this._systemModel.eventHub = new EventHub();
     }
     
+    private bootstrapCascadeStrategy(): void{
+        this._systemModel.cascadeStrategyProvider = new CascadeStrategyProvider(this._systemModel.nodeMesh, this._systemModel.gravityStateModel);
+    }
+
     private bootstrapBlockFactory():void {
         let blockLayerGroup: Phaser.Group = this._game.add.group();
         let blockFactory: BlockFactory = new BlockFactory(this._game, blockLayerGroup, this._systemModel.eventHub);
         this._systemModel.blockFactory = blockFactory;
+    }
+
+    private bootstrapBackground(): void{
+        let backgroundLayerGroup: Phaser.Group = this._game.add.group();
+        let planetView : PlanetView = new PlanetView(this._game, backgroundLayerGroup);
+        let planetMediator : PlanetMediator = new PlanetMediator(this._systemModel.gravityStateModel,planetView, this._systemModel.eventHub); 
     }
 
     private bootstrapInput():void {
@@ -62,14 +77,26 @@ export class Startup{
 
     private bootstrapModels(): void {
         this._systemModel.gridModel = new GridModel(this._systemModel.eventHub); 
+        this._systemModel.gravityStateModel = new GravityStateModel(this._systemModel.eventHub);
+        this._systemModel.scoreModel = new ScoreModel(this._systemModel.eventHub);
+    }
+
+    private bootstrapNodes(): void{
+        let nodeMesh: NodeMesh = new NodeMeshFactory().createNodeMesh(new Phaser.Point(9,9));
+        this._systemModel.nodeMesh = nodeMesh;
     }
 
     private bootstrapGrid(): void{
-        let nodeMesh: NodeMesh = new NodeMeshFactory().createNodeMesh(new Phaser.Point(9,9));
-        let gridEvaluator:GridEvaluator = new GridEvaluator(this._systemModel.eventHub, nodeMesh);
+        let gridEvaluator:GridEvaluator = new GridEvaluator(this._systemModel.eventHub, this._systemModel.nodeMesh);
+        let gridController: GridController = new GridController(this._systemModel.blockFactory, this._systemModel.eventHub, this._systemModel.nodeMesh, this._systemModel.cascadeStrategyProvider);
         this._systemModel.gridEvaluator = gridEvaluator;
-        let gridController: GridController = new GridController(9,9,this._systemModel.blockFactory, this._systemModel.eventHub, nodeMesh);
         this._systemModel.gridController = gridController;
+    }
+
+    private bootstrapControlPanel(): void{
+        let controlPanelLayerGroup: Phaser.Group = this._game.add.group();
+        let controlPanelView: ControlPanelView = new ControlPanelView(this._game, controlPanelLayerGroup);
+        let controlPanelMediator: ControlPanelMediator = new ControlPanelMediator(this._systemModel.scoreModel,controlPanelView, this._systemModel.eventHub);
     }
 
     get systemModel(): ISystemModel{

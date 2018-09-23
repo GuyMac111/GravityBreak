@@ -1,4 +1,3 @@
-import { GridController } from "./Grid/GridController";
 import { Startup } from "./System/Startup";
 
 class GravityBreakGame{
@@ -10,18 +9,14 @@ class GravityBreakGame{
 	
 	preload(){
 		this.game.load.spritesheet("diamonds", "assets/diamonds32x5.png",64,64,5);
-		this.game.stage.backgroundColor = 0xB20059;
+		this.game.load.image("planet","assets/rock-planet.png");
+		this.game.stage.backgroundColor = 0x000000;
 	}
 	
 	create(){
-		// let diamond = this.game.add.sprite( this.game.world.centerX, this.game.world.centerY,'diamonds',1);
-		// diamond.anchor.setTo( 0.5, 0.5 );
-
 		let startup: Startup = new Startup(this.game);
 		startup.initialiseGame();
 	}
-
-	
 }
 
 export = GravityBreakGame;

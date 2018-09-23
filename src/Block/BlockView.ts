@@ -1,10 +1,9 @@
 import { View } from "../System/View";
 import { BlockColour } from "./BlockColour";
-import { Easing } from "phaser";
 
 export class BlockView extends View{
     private readonly SELECTION_SPEED: number = 200;
-    private readonly GRID_OFFSET: number = 32;//We know the blocks are square and we want them at their center.
+    private readonly SPRITE_OFFSET: number = 32;//We know the blocks are square and we want them at their center.
 
     private _diamondSprite: Phaser.Sprite;
 
@@ -83,6 +82,6 @@ export class BlockView extends View{
     }
 
     private translateGridCoordsToWorld(gridCoords: Phaser.Point): Phaser.Point{
-        return new Phaser.Point(gridCoords.x*64+this.GRID_OFFSET, gridCoords.y*64+this.GRID_OFFSET);
+        return new Phaser.Point(gridCoords.x*64+this.SPRITE_OFFSET, gridCoords.y*64+this.SPRITE_OFFSET);
     }
 }

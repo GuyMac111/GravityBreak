@@ -1,21 +1,21 @@
-import { GridNode } from "../Grid/GridNode";
 import { NodeMesh } from "../Grid/NodeMesh";
 import { BaseCascadeStrategy } from "./BaseCascadeStrategy";
+import { GridNode } from "../Grid/GridNode";
 
-export class DownCascadeStrategy extends BaseCascadeStrategy{
+export class UpCascadeStrategy extends BaseCascadeStrategy{
 
     constructor(nodeMesh: NodeMesh){
         super(nodeMesh);
     }
 
     protected getSpawnCoordForNode(node: GridNode): Phaser.Point{
-        //y = -1 as we want to spawn from the top.
-        return new Phaser.Point(node.gridCoordinate.x, -1);
+        //y = max as we want to spawn from the bottom.
+        return new Phaser.Point(node.gridCoordinate.x, this._nodeMesh.dimensionsInNodes.y);
     }
 
     protected findNextUnoccupiedNode(): GridNode | undefined {
-        for(let j = this._nodeMesh.dimensionsInNodes.y-1; j >= 0 ;j--){
-            //counting backwards, as we wanna check from the bottom up
+        for(let j = 0; j < this._nodeMesh.dimensionsInNodes.y;j++){
+            //counting forwards, as we wanna check from the top down
             let potentiallyUnoccupiedNode = this.getFirstUnoccupiedNodeInRow(j);
             if(potentiallyUnoccupiedNode != undefined){
                 return potentiallyUnoccupiedNode;
@@ -28,14 +28,15 @@ export class DownCascadeStrategy extends BaseCascadeStrategy{
         if(!node.isOccupied){
             emptyNodesSoFar++
         }
-        if(node.nodeBelow!=undefined){
-            return this.getNumberOfEmptyNodesInCascadePath(node.nodeBelow,emptyNodesSoFar);
+        if(node.nodeAbove!=undefined){
+            return this.getNumberOfEmptyNodesInCascadePath(node.nodeAbove,emptyNodesSoFar);
         }else{
             return emptyNodesSoFar;
         }
     }
 
     protected getCascadeDestinationForNode(node: GridNode, distanceToCascade: number): Phaser.Point{
-        return new Phaser.Point(node.gridCoordinate.x, node.gridCoordinate.y+distanceToCascade);
+        return new Phaser.Point(node.gridCoordinate.x, node.gridCoordinate.y-distanceToCascade);
     }
+
 }
