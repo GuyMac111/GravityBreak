@@ -5,7 +5,7 @@ import { GridController } from "../Grid/GridController";
 import { EventHub } from "./Events/EventHub";
 import { GridEvents } from "../Grid/GridEvents";
 import { InputController } from "../Input/InputController";
-import { GridModel } from "../Grid/GridModel";
+import { GridStateController } from "../Grid/GridStateController";
 import { GridEvaluator } from "../Grid/GridEvaluator";
 import { NodeMeshFactory } from "../Grid/NodeMeshFactory";
 import { NodeMesh } from "../Grid/NodeMesh";
@@ -16,6 +16,8 @@ import { PlanetMediator } from "../Background/PlanetMediator";
 import { ControlPanelView } from "../ControlPanel/ControlPanelView";
 import { ControlPanelMediator } from "../ControlPanel/ControlPanelMediator";
 import { ScoreModel } from "../Score/ScoreModel";
+import { Timer } from "./Time/Timer";
+import { SoundController } from "../Sound/SoundController";
 
 export class Startup{
     private _game: Phaser.Game;
@@ -42,7 +44,9 @@ export class Startup{
         this.bootstrapEventHub();
         this.bootstrapModels();
         this.bootstrapNodes();
+        this.bootstrapSound();
         this.bootstrapInput();
+        this.bootstrapTimer();
         this.bootstrapCascadeStrategy();
         this.bootstrapBackground();
         this.bootstrapBlockFactory();
@@ -76,7 +80,7 @@ export class Startup{
     }
 
     private bootstrapModels(): void {
-        this._systemModel.gridModel = new GridModel(this._systemModel.eventHub); 
+        this._systemModel.gridModel = new GridStateController(this._systemModel.eventHub); 
         this._systemModel.gravityStateModel = new GravityStateModel(this._systemModel.eventHub);
         this._systemModel.scoreModel = new ScoreModel(this._systemModel.eventHub);
     }
@@ -97,6 +101,18 @@ export class Startup{
         let controlPanelLayerGroup: Phaser.Group = this._game.add.group();
         let controlPanelView: ControlPanelView = new ControlPanelView(this._game, controlPanelLayerGroup);
         let controlPanelMediator: ControlPanelMediator = new ControlPanelMediator(this._systemModel.scoreModel,controlPanelView, this._systemModel.eventHub);
+    }
+
+    private bootstrapSound(): void{
+        let soundController:SoundController = new SoundController(this._game, this._systemModel.eventHub);
+        soundController.initialise();
+        this._systemModel.soundController = soundController;
+    }
+
+    private bootstrapTimer(): void{
+        // It might look here like nothing is holding a reference to this, so GC is a threat.
+        // But actually, it's events tether it to the event hub. Could go in the system model, to be sure, but time and stuff.
+        let timer: Timer = new Timer(this._game, this._systemModel.eventHub);
     }
 
     get systemModel(): ISystemModel{

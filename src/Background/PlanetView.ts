@@ -1,6 +1,7 @@
 import { View } from "../System/View";
 import { GravityState } from "../Gravity/GravityState";
 import { Dictionary } from "typescript-collections";
+import { Assets } from "../System/Assets";
 
 export class PlanetView extends View{
     //We're going to hardcode these here for time's sake. They could be moved to a model based on the grid/game dimensions at some point.
@@ -26,7 +27,7 @@ export class PlanetView extends View{
         this._gravityStatePlanetLocationMap.setValue(GravityState.Right, this.PLANET_RIGHT_POS);
 
         let startingPosition = this.PLANET_BOTTOM_POS;
-        this._planetSprite = this.layerGroup.create(startingPosition.x,startingPosition.y,"planet");
+        this._planetSprite = this.layerGroup.create(startingPosition.x,startingPosition.y,Assets.SpritePlanet);
         this._planetSprite.scale = new Phaser.Point(1.5, 1.5);
         this._planetSprite.anchor = new Phaser.Point(0.5, 0.5);
     }

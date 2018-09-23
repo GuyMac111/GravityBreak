@@ -2,13 +2,14 @@ import { BlockFactory } from "../Block/BlockFactory";
 import { ISystemModel } from "./ISystemModel";
 import { EventHub } from "./Events/EventHub";
 import { InputController } from "../Input/InputController";
-import { GridModel } from "../Grid/GridModel";
+import { GridStateController } from "../Grid/GridStateController";
 import { GridEvaluator } from "../Grid/GridEvaluator";
 import { GridController } from "../Grid/GridController";
 import { GravityStateModel } from "../Gravity/GravityStateModel";
 import { CascadeStrategyProvider } from "../Cascade/CascadeStrategyProvider";
 import { NodeMesh } from "../Grid/NodeMesh";
 import { ScoreModel } from "../Score/ScoreModel";
+import { SoundController } from "../Sound/SoundController";
 
 //////
 //This class is essentially a BTEC program context
@@ -17,12 +18,21 @@ export class SystemModel implements ISystemModel{
 private _blockFactory: BlockFactory;
     private _eventHub: EventHub;
     private _inputController: InputController;
-    private _gridModel: GridModel;
+    private _gridModel: GridStateController;
     private _gridEvaluator: GridEvaluator;
     private _gridController: GridController;
     private _cascadeStrategyProvider: CascadeStrategyProvider;
     private _nodeMesh: NodeMesh;
     private _scoreModel: ScoreModel;
+    private _soundController: SoundController;
+
+    get soundController(): SoundController {
+		return this._soundController;
+	}
+
+    set soundController(value: SoundController) {
+		this._soundController = value;
+	}
 
 	get scoreModel(): ScoreModel {
 		return this._scoreModel;
@@ -57,11 +67,11 @@ private _blockFactory: BlockFactory;
 	}
     private _gravityStateModel: GravityStateModel;
 
-    set gridModel(gridModel: GridModel){
+    set gridModel(gridModel: GridStateController){
         this._gridModel = gridModel;
     }
 
-    get gridModel(): GridModel{
+    get gridModel(): GridStateController{
         return this._gridModel;
     }
     set blockFactory(blockFactory: BlockFactory){

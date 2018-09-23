@@ -4,6 +4,7 @@ import { BlockColour } from "./BlockColour";
 import { EventHub } from "../System/Events/EventHub";
 import { BlockEvents } from "./BlockEvents";
 import { GridNode } from "../Grid/GridNode";
+import { SoundEvents } from "../Sound/SoundEvents";
 
 export class BlockMediator extends Mediator{
     private readonly SPAWN_DURATION: number = 7;
@@ -35,6 +36,7 @@ export class BlockMediator extends Mediator{
     }
 
     respawnBlockTo(gridDestination: Phaser.Point): void{
+        this.dispatchEvent(SoundEvents.PlayCascadeEvent);
         this._blockView.moveToPosition(gridDestination, this.RESPAWN_DURATION,this.onBlockMoveComplete.bind(this));
     }
 
@@ -71,7 +73,11 @@ export class BlockMediator extends Mediator{
     }
 
     showBlockDestroyAnimation(delay:number): void{
-        this._blockView.showBlockDestroyAnimation(delay,this.onBlockDestroyComplete.bind(this));
+        this._blockView.showBlockDestroyAnimation(delay, this.playBreakSFX.bind(this), this.onBlockDestroyComplete.bind(this));
+    }
+
+    private playBreakSFX(): void{
+        this.dispatchEvent(SoundEvents.PlayExplosionEvent);
     }
 
     private onBlockDestroyComplete(): void{

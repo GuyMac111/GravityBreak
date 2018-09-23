@@ -2,12 +2,11 @@ import { EventHandler } from "../System/Events/EventHandler";
 import { EventHub } from "../System/Events/EventHub";
 import { GridEvents } from "./GridEvents";
 import { SwapVO } from "./VOs/SwapVO";
-import { NodeMesh } from "./NodeMesh";
-import { Input } from "phaser";
 import { InputEvents } from "../Input/InputEvents";
+import { TimerEvents } from "../System/Time/TimerEvents";
+import { SoundEvents } from "../Sound/SoundEvents";
 
-export class GridModel extends EventHandler{
-    //hmmmmmm.... Maybe 'InputModel' insted???
+export class GridStateController extends EventHandler{
     private _currentlySelectedCoord: Phaser.Point;
     private _swapCandidateCoord: Phaser.Point;
     private _selectedBlockSwapAnimationComplete: boolean = false;
@@ -16,6 +15,7 @@ export class GridModel extends EventHandler{
     constructor(injectedEventHub: EventHub){
         super(injectedEventHub);
         this.addEventListener(GridEvents.InitialiseGridCompleteEvent, this.onGridInitialisedEvent.bind(this));
+        this.addEventListener(TimerEvents.TimeExpiredEvent,this.onTimeExpiredEvent.bind(this));
     }
 
     get hasCurrentlySelectedBlock():  boolean{
@@ -69,7 +69,13 @@ export class GridModel extends EventHandler{
     }
 
     private onGridInitialisedEvent(): void{
+        this.dispatchEvent(TimerEvents.StartTimeEvent);
+        this.dispatchEvent(SoundEvents.PlayBGMEvent);
         this.dispatchEvent(InputEvents.EnableInputsEvent);
+    }
+
+    private onTimeExpiredEvent(): void{
+        this.dispatchEvent(InputEvents.DisableInputsEvent);
     }
 
     private addBlockSwapEventListeners(): void {

@@ -112,7 +112,19 @@ define("Block/BlockColour", ["require", "exports"], function (require, exports) 
         BlockColour[BlockColour["Blue"] = 4] = "Blue";
     })(BlockColour = exports.BlockColour || (exports.BlockColour = {}));
 });
-define("Block/BlockView", ["require", "exports", "System/View"], function (require, exports, View_1) {
+define("System/Assets", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class Assets {
+    }
+    Assets.SpriteDiamonds = "diamonds";
+    Assets.SpritePlanet = "planet";
+    Assets.SFXBreak = "break";
+    Assets.SFXCascade = "cascade";
+    Assets.SFXBgm = "bgm";
+    exports.Assets = Assets;
+});
+define("Block/BlockView", ["require", "exports", "System/View", "System/Assets"], function (require, exports, View_1, Assets_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class BlockView extends View_1.View {
@@ -123,7 +135,7 @@ define("Block/BlockView", ["require", "exports", "System/View"], function (requi
         }
         initialise(startingGridCoordinates, colour) {
             let startingCoords = this.translateGridCoordsToWorld(startingGridCoordinates);
-            this._diamondSprite = this.layerGroup.create(startingCoords.x, startingCoords.y, 'diamonds', colour);
+            this._diamondSprite = this.layerGroup.create(startingCoords.x, startingCoords.y, Assets_1.Assets.SpriteDiamonds, colour);
             this._diamondSprite.anchor = new Phaser.Point(0.5, 0.5);
             this._diamondSprite.inputEnabled = true;
             this._diamondSprite.events.onInputDown.add(this.onBlockTouched, this);
@@ -164,10 +176,11 @@ define("Block/BlockView", ["require", "exports", "System/View"], function (requi
             }, this.SELECTION_SPEED, Phaser.Easing.Bounce.Out);
             tween.start();
         }
-        showBlockDestroyAnimation(delay, onComplete) {
+        showBlockDestroyAnimation(delay, onStart, onComplete) {
             let horizTween = this.game.add.tween(this._diamondSprite.scale).to({ x: 1.25, y: 0.05 }, 300, Phaser.Easing.Elastic.Out, false, delay);
             let vertTween = this.game.add.tween(this._diamondSprite.scale).to({ x: 0, y: 0 }, 200, Phaser.Easing.Linear.None, false, 50);
             vertTween.onComplete.add(onComplete);
+            vertTween.onStart.add(onStart);
             horizTween.chain(vertTween);
             horizTween.start();
         }
@@ -248,7 +261,17 @@ define("Grid/GridNode", ["require", "exports"], function (require, exports) {
     }
     exports.GridNode = GridNode;
 });
-define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/BlockEvents"], function (require, exports, Mediator_1, BlockEvents_1) {
+define("Sound/SoundEvents", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class SoundEvents {
+    }
+    SoundEvents.PlayBGMEvent = "PlayBGM";
+    SoundEvents.PlayExplosionEvent = "PlayExplosion";
+    SoundEvents.PlayCascadeEvent = "PlayCascade";
+    exports.SoundEvents = SoundEvents;
+});
+define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/BlockEvents", "Sound/SoundEvents"], function (require, exports, Mediator_1, BlockEvents_1, SoundEvents_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class BlockMediator extends Mediator_1.Mediator {
@@ -268,6 +291,7 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
             this._blockView.moveToPosition(gridDestination, this.SPAWN_DURATION, this.onBlockMoveComplete.bind(this));
         }
         respawnBlockTo(gridDestination) {
+            this.dispatchEvent(SoundEvents_1.SoundEvents.PlayCascadeEvent);
             this._blockView.moveToPosition(gridDestination, this.RESPAWN_DURATION, this.onBlockMoveComplete.bind(this));
         }
         swapBlockTo(gridDestination) {
@@ -297,7 +321,10 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
             this._blockView.showBlockUnselected();
         }
         showBlockDestroyAnimation(delay) {
-            this._blockView.showBlockDestroyAnimation(delay, this.onBlockDestroyComplete.bind(this));
+            this._blockView.showBlockDestroyAnimation(delay, this.playBreakSFX.bind(this), this.onBlockDestroyComplete.bind(this));
+        }
+        playBreakSFX() {
+            this.dispatchEvent(SoundEvents_1.SoundEvents.PlayExplosionEvent);
         }
         onBlockDestroyComplete() {
             this._blockView.destroySpriteInstance();
@@ -386,29 +413,6 @@ define("Grid/VOs/SwapVO", ["require", "exports"], function (require, exports) {
     }
     exports.SwapVO = SwapVO;
 });
-define("Grid/NodeMesh", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    //A class which contains all the associated nodes of a grid 
-    //as well as the hidden 'spawn nodes' of said grid in a separate dict
-    class NodeMesh {
-        constructor(nodes, spawnNodes, dimensionsInNodes) {
-            this._nodes = nodes;
-            this._spawnNodes = spawnNodes;
-            this._dimensionsInNodes = dimensionsInNodes;
-        }
-        get nodes() {
-            return this._nodes;
-        }
-        get spawnNodes() {
-            return this._spawnNodes;
-        }
-        get dimensionsInNodes() {
-            return this._dimensionsInNodes;
-        }
-    }
-    exports.NodeMesh = NodeMesh;
-});
 define("Input/InputEvents", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -420,15 +424,26 @@ define("Input/InputEvents", ["require", "exports"], function (require, exports) 
     InputEvents.RotateLeftTouched = "InputEvents.RotateLeftTouched";
     exports.InputEvents = InputEvents;
 });
-define("Grid/GridModel", ["require", "exports", "System/Events/EventHandler", "Grid/GridEvents", "Grid/VOs/SwapVO", "Input/InputEvents"], function (require, exports, EventHandler_2, GridEvents_1, SwapVO_1, InputEvents_1) {
+define("System/Time/TimerEvents", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    class GridModel extends EventHandler_2.EventHandler {
+    class TimerEvents {
+    }
+    TimerEvents.StartTimeEvent = "TimerEvents.StartTime";
+    TimerEvents.TimeIntervalElapsedEvent = "TimerEvents.TimeIntervalElapsed";
+    TimerEvents.TimeExpiredEvent = "TimerEvents.TimeExpired";
+    exports.TimerEvents = TimerEvents;
+});
+define("Grid/GridStateController", ["require", "exports", "System/Events/EventHandler", "Grid/GridEvents", "Grid/VOs/SwapVO", "Input/InputEvents", "System/Time/TimerEvents", "Sound/SoundEvents"], function (require, exports, EventHandler_2, GridEvents_1, SwapVO_1, InputEvents_1, TimerEvents_1, SoundEvents_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GridStateController extends EventHandler_2.EventHandler {
         constructor(injectedEventHub) {
             super(injectedEventHub);
             this._selectedBlockSwapAnimationComplete = false;
             this._swapCandidateBlockSwapAnimationComplete = false;
             this.addEventListener(GridEvents_1.GridEvents.InitialiseGridCompleteEvent, this.onGridInitialisedEvent.bind(this));
+            this.addEventListener(TimerEvents_1.TimerEvents.TimeExpiredEvent, this.onTimeExpiredEvent.bind(this));
         }
         get hasCurrentlySelectedBlock() {
             return this._currentlySelectedCoord != undefined;
@@ -480,7 +495,12 @@ define("Grid/GridModel", ["require", "exports", "System/Events/EventHandler", "G
             return false;
         }
         onGridInitialisedEvent() {
+            this.dispatchEvent(TimerEvents_1.TimerEvents.StartTimeEvent);
+            this.dispatchEvent(SoundEvents_2.SoundEvents.PlayBGMEvent);
             this.dispatchEvent(InputEvents_1.InputEvents.EnableInputsEvent);
+        }
+        onTimeExpiredEvent() {
+            this.dispatchEvent(InputEvents_1.InputEvents.DisableInputsEvent);
         }
         addBlockSwapEventListeners() {
             this.addEventListener(GridEvents_1.GridEvents.SelectedBlockSwapAnimationCompleteEvent, this.onSelectedBlockSwapComplete.bind(this));
@@ -573,7 +593,7 @@ define("Grid/GridModel", ["require", "exports", "System/Events/EventHandler", "G
             this.removeEventListener(GridEvents_1.GridEvents.GridEvaluationNegativeEvent);
         }
     }
-    exports.GridModel = GridModel;
+    exports.GridStateController = GridStateController;
 });
 define("Gravity/GravityEvent", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -593,7 +613,7 @@ define("Background/PlanetEvents", ["require", "exports"], function (require, exp
     PlanetEvents.PlanetMoveCompleteEvent = "PlanetEvents.PlanetMoveComplete";
     exports.PlanetEvents = PlanetEvents;
 });
-define("Input/InputController", ["require", "exports", "System/Events/EventHandler", "Block/BlockEvents", "Input/InputEvents", "Gravity/GravityEvent", "Background/PlanetEvents"], function (require, exports, EventHandler_3, BlockEvents_2, InputEvents_2, GravityEvent_1, PlanetEvents_1) {
+define("Input/InputController", ["require", "exports", "System/Events/EventHandler", "Block/BlockEvents", "Input/InputEvents", "Gravity/GravityEvent", "Background/PlanetEvents", "System/Time/TimerEvents"], function (require, exports, EventHandler_3, BlockEvents_2, InputEvents_2, GravityEvent_1, PlanetEvents_1, TimerEvents_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class InputController extends EventHandler_3.EventHandler {
@@ -602,6 +622,7 @@ define("Input/InputController", ["require", "exports", "System/Events/EventHandl
             this._gridModel = injectedGridModel;
             this.addEventListener(InputEvents_2.InputEvents.EnableInputsEvent, this.unlockUserInput.bind(this));
             this.addEventListener(InputEvents_2.InputEvents.DisableInputsEvent, this.lockUserInput.bind(this));
+            this.addEventListener(TimerEvents_2.TimerEvents.TimeExpiredEvent, this.onTimeOverEvent.bind(this));
         }
         unlockUserInput() {
             this.addEventListener(BlockEvents_2.BlockEvents.BlockTouchedEvent, this.onBlockTouched.bind(this));
@@ -629,8 +650,36 @@ define("Input/InputController", ["require", "exports", "System/Events/EventHandl
         onBlockTouched(message) {
             this._gridModel.selectBlock(message);
         }
+        onTimeOverEvent() {
+            this.removeEventListener(InputEvents_2.InputEvents.EnableInputsEvent);
+            //this is because if there's a pending enable event when the time runs out, the input will unlock after the time expires.
+            this.lockUserInput();
+        }
     }
     exports.InputController = InputController;
+});
+define("Grid/NodeMesh", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    //A class which contains all the associated nodes of a grid 
+    //as well as the hidden 'spawn nodes' of said grid in a separate dict
+    class NodeMesh {
+        constructor(nodes, spawnNodes, dimensionsInNodes) {
+            this._nodes = nodes;
+            this._spawnNodes = spawnNodes;
+            this._dimensionsInNodes = dimensionsInNodes;
+        }
+        get nodes() {
+            return this._nodes;
+        }
+        get spawnNodes() {
+            return this._spawnNodes;
+        }
+        get dimensionsInNodes() {
+            return this._dimensionsInNodes;
+        }
+    }
+    exports.NodeMesh = NodeMesh;
 });
 define("Grid/VOs/BreakVO", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -1452,6 +1501,37 @@ define("Score/ScoreModel", ["require", "exports", "System/Events/EventHandler", 
     }
     exports.ScoreModel = ScoreModel;
 });
+define("Sound/SoundController", ["require", "exports", "System/Events/EventHandler", "Sound/SoundEvents", "System/Assets"], function (require, exports, EventHandler_8, SoundEvents_3, Assets_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class SoundController extends EventHandler_8.EventHandler {
+        constructor(injectedGame, injectedEventHub) {
+            super(injectedEventHub);
+            this._game = injectedGame;
+            this.addEventListener(SoundEvents_3.SoundEvents.PlayBGMEvent, this.onPlayBGMEvent.bind(this));
+            this.addEventListener(SoundEvents_3.SoundEvents.PlayExplosionEvent, this.onPlayExplosionSFXEvent.bind(this));
+            this.addEventListener(SoundEvents_3.SoundEvents.PlayCascadeEvent, this.onPlayCascadeSFXEvent.bind(this));
+        }
+        initialise() {
+            this._explosion = this._game.add.audio(Assets_2.Assets.SFXBreak);
+            this._bgm = this._game.add.audio(Assets_2.Assets.SFXBgm, 1, true);
+            this._cascade = this._game.add.audio(Assets_2.Assets.SFXCascade, 0.7);
+        }
+        ////
+        //Obviously in a more complex game we would map these into a dictionary with keys, and pass that key as a payload through a single event
+        ////
+        onPlayBGMEvent() {
+            this._bgm.play();
+        }
+        onPlayExplosionSFXEvent() {
+            this._explosion.play();
+        }
+        onPlayCascadeSFXEvent() {
+            this._cascade.play();
+        }
+    }
+    exports.SoundController = SoundController;
+});
 define("System/SystemModel", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1459,6 +1539,12 @@ define("System/SystemModel", ["require", "exports"], function (require, exports)
     //This class is essentially a BTEC program context
     //////
     class SystemModel {
+        get soundController() {
+            return this._soundController;
+        }
+        set soundController(value) {
+            this._soundController = value;
+        }
         get scoreModel() {
             return this._scoreModel;
         }
@@ -1522,7 +1608,7 @@ define("System/SystemModel", ["require", "exports"], function (require, exports)
     }
     exports.SystemModel = SystemModel;
 });
-define("Background/PlanetView", ["require", "exports", "System/View", "Gravity/GravityState", "typescript-collections"], function (require, exports, View_2, GravityState_3, typescript_collections_5) {
+define("Background/PlanetView", ["require", "exports", "System/View", "Gravity/GravityState", "typescript-collections", "System/Assets"], function (require, exports, View_2, GravityState_3, typescript_collections_5, Assets_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class PlanetView extends View_2.View {
@@ -1543,7 +1629,7 @@ define("Background/PlanetView", ["require", "exports", "System/View", "Gravity/G
             this._gravityStatePlanetLocationMap.setValue(GravityState_3.GravityState.Left, this.PLANET_LEFT_POS);
             this._gravityStatePlanetLocationMap.setValue(GravityState_3.GravityState.Right, this.PLANET_RIGHT_POS);
             let startingPosition = this.PLANET_BOTTOM_POS;
-            this._planetSprite = this.layerGroup.create(startingPosition.x, startingPosition.y, "planet");
+            this._planetSprite = this.layerGroup.create(startingPosition.x, startingPosition.y, Assets_3.Assets.SpritePlanet);
             this._planetSprite.scale = new Phaser.Point(1.5, 1.5);
             this._planetSprite.anchor = new Phaser.Point(0.5, 0.5);
         }
@@ -1584,7 +1670,37 @@ define("Background/PlanetMediator", ["require", "exports", "System/Mediator", "B
     }
     exports.PlanetMediator = PlanetMediator;
 });
-define("ControlPanel/ControlPanelView", ["require", "exports", "System/View"], function (require, exports, View_3) {
+define("System/Time/Timer", ["require", "exports", "System/Events/EventHandler", "System/Time/TimerEvents"], function (require, exports, EventHandler_9, TimerEvents_3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class Timer extends EventHandler_9.EventHandler {
+        constructor(injectedGame, injectedEventHub) {
+            super(injectedEventHub);
+            this._game = injectedGame;
+            this._timeRemaining = Timer.ROUND_TIME;
+            this.addEventListener(TimerEvents_3.TimerEvents.StartTimeEvent, this.onStartTimerEvent.bind(this));
+        }
+        onStartTimerEvent() {
+            this._timerEvent = this._game.time.events.loop(Phaser.Timer.SECOND, this.onInterval.bind(this), this);
+        }
+        onTimeExpired() {
+            this._game.time.events.remove(this._timerEvent);
+            this.dispatchEvent(TimerEvents_3.TimerEvents.TimeExpiredEvent);
+        }
+        onInterval() {
+            this._timeRemaining--;
+            if (this._timeRemaining < 0) {
+                this.onTimeExpired();
+            }
+            else {
+                this.dispatchEvent(TimerEvents_3.TimerEvents.TimeIntervalElapsedEvent, this._timeRemaining);
+            }
+        }
+    }
+    Timer.ROUND_TIME = 100;
+    exports.Timer = Timer;
+});
+define("ControlPanel/ControlPanelView", ["require", "exports", "System/View", "System/Time/Timer"], function (require, exports, View_3, Timer_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class ControlPanelView extends View_3.View {
@@ -1593,14 +1709,18 @@ define("ControlPanel/ControlPanelView", ["require", "exports", "System/View"], f
             this.ROTATE_LEFT_DIMS = new Phaser.Rectangle(600, 340, 180, 100);
             this.ROTATE_RIGHT_DIMS = new Phaser.Rectangle(600, 460, 180, 100);
             this.BACKGROUND_PANEL_DIMS = new Phaser.Rectangle(580, 0, 220, 600);
-            this.SCORE_POS = new Phaser.Point(615, 120);
+            this.SCORE_POS = new Phaser.Point(620, 220);
+            this.TIME_POS = new Phaser.Point(640, 80);
             this.SCORE_TWEEN_DURATION = 500;
+            this._textStyle = { font: "37px Arial", fill: "#000000", align: "center" };
         }
         initialise() {
             this.initialiseButtons();
             this._score = 0;
             this.initialiseScore();
+            this.initiliseTimer();
         }
+        //These are only public so that the tween may tick them
         set score(value) {
             this._score = Math.floor(value);
             this._scoreText.text = `SCORE\n${this._score}`;
@@ -1609,9 +1729,11 @@ define("ControlPanel/ControlPanelView", ["require", "exports", "System/View"], f
             //we need a getter otherwise the tween won't work. It'll start from zero every time, as i presume the tween class cant access the prop.
             return this._score;
         }
+        initiliseTimer() {
+            this._timeRemainingtext = this.game.add.text(this.TIME_POS.x, this.TIME_POS.y, `TIME\n${Timer_1.Timer.ROUND_TIME}`, this._textStyle, this.layerGroup);
+        }
         initialiseScore() {
-            let textStyle = { font: "37px Arial", fill: "#000000", align: "center" };
-            this._scoreText = this.game.add.text(this.SCORE_POS.x, this.SCORE_POS.y, `SCORE\n${this._score}`, textStyle, this.layerGroup);
+            this._scoreText = this.game.add.text(this.SCORE_POS.x, this.SCORE_POS.y, `SCORE\n${this._score}`, this._textStyle, this.layerGroup);
         }
         initialiseButtons() {
             this._backgroundPanel = this.game.add.graphics(this.BACKGROUND_PANEL_DIMS.x, this.BACKGROUND_PANEL_DIMS.y, this.layerGroup);
@@ -1634,6 +1756,15 @@ define("ControlPanel/ControlPanelView", ["require", "exports", "System/View"], f
             let leftArrow = this.game.add.text(this.ROTATE_LEFT_DIMS.centerX - 20, this.ROTATE_LEFT_DIMS.centerY - 30, "<", textStyle, this.layerGroup);
             let rightArrow = this.game.add.text(this.ROTATE_RIGHT_DIMS.centerX - 20, this.ROTATE_RIGHT_DIMS.centerY - 30, ">", textStyle, this.layerGroup);
         }
+        updateTimer(timeRemaining) {
+            this._timeRemainingtext.text = `TIME\n${timeRemaining}`;
+        }
+        updateScore(newScore, additionalAmount) {
+            let tween = this.game.add.tween(this).to({
+                score: newScore
+            }, this.SCORE_TWEEN_DURATION, Phaser.Easing.Quadratic.In, false);
+            tween.start();
+        }
         onRotateLeftTouched() {
             if (this.rotateLeftTouched != undefined) {
                 this.rotateLeftTouched();
@@ -1644,21 +1775,16 @@ define("ControlPanel/ControlPanelView", ["require", "exports", "System/View"], f
                 this.rotateRightTouched();
             }
         }
-        updateScore(newScore, additionalAmount) {
-            let tween = this.game.add.tween(this).to({
-                score: newScore
-            }, this.SCORE_TWEEN_DURATION, Phaser.Easing.Quadratic.In, false);
-            tween.start();
-        }
     }
     exports.ControlPanelView = ControlPanelView;
 });
-define("ControlPanel/ControlPanelMediator", ["require", "exports", "System/Mediator", "Input/InputEvents"], function (require, exports, Mediator_3, InputEvents_3) {
+define("ControlPanel/ControlPanelMediator", ["require", "exports", "System/Mediator", "Input/InputEvents", "System/Time/TimerEvents"], function (require, exports, Mediator_3, InputEvents_3, TimerEvents_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class ControlPanelMediator extends Mediator_3.Mediator {
         constructor(injectedScoreModel, injectedView, injectedEventHub) {
             super(injectedEventHub);
+            this.addEventListener(TimerEvents_4.TimerEvents.TimeIntervalElapsedEvent, this.onUpdateTimerEvent.bind(this));
             this._scoreModel = injectedScoreModel;
             this._scoreModel.scoreUpdated = this.onScoreUpdated.bind(this);
             this._controlPanelView = injectedView;
@@ -1675,10 +1801,13 @@ define("ControlPanel/ControlPanelMediator", ["require", "exports", "System/Media
         onScoreUpdated(newScore, additionalAmount) {
             this._controlPanelView.updateScore(newScore, additionalAmount);
         }
+        onUpdateTimerEvent(timeRemaining) {
+            this._controlPanelView.updateTimer(timeRemaining);
+        }
     }
     exports.ControlPanelMediator = ControlPanelMediator;
 });
-define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/SystemModel", "Grid/GridController", "System/Events/EventHub", "Grid/GridEvents", "Input/InputController", "Grid/GridModel", "Grid/GridEvaluator", "Grid/NodeMeshFactory", "Gravity/GravityStateModel", "Cascade/CascadeStrategyProvider", "Background/PlanetView", "Background/PlanetMediator", "ControlPanel/ControlPanelView", "ControlPanel/ControlPanelMediator", "Score/ScoreModel"], function (require, exports, BlockFactory_1, SystemModel_1, GridController_1, EventHub_1, GridEvents_4, InputController_1, GridModel_1, GridEvaluator_1, NodeMeshFactory_1, GravityStateModel_1, CascadeStrategyProvider_1, PlanetView_1, PlanetMediator_1, ControlPanelView_1, ControlPanelMediator_1, ScoreModel_1) {
+define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/SystemModel", "Grid/GridController", "System/Events/EventHub", "Grid/GridEvents", "Input/InputController", "Grid/GridStateController", "Grid/GridEvaluator", "Grid/NodeMeshFactory", "Gravity/GravityStateModel", "Cascade/CascadeStrategyProvider", "Background/PlanetView", "Background/PlanetMediator", "ControlPanel/ControlPanelView", "ControlPanel/ControlPanelMediator", "Score/ScoreModel", "System/Time/Timer", "Sound/SoundController"], function (require, exports, BlockFactory_1, SystemModel_1, GridController_1, EventHub_1, GridEvents_4, InputController_1, GridStateController_1, GridEvaluator_1, NodeMeshFactory_1, GravityStateModel_1, CascadeStrategyProvider_1, PlanetView_1, PlanetMediator_1, ControlPanelView_1, ControlPanelMediator_1, ScoreModel_1, Timer_2, SoundController_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Startup {
@@ -1698,7 +1827,9 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
             this.bootstrapEventHub();
             this.bootstrapModels();
             this.bootstrapNodes();
+            this.bootstrapSound();
             this.bootstrapInput();
+            this.bootstrapTimer();
             this.bootstrapCascadeStrategy();
             this.bootstrapBackground();
             this.bootstrapBlockFactory();
@@ -1726,7 +1857,7 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
             this._systemModel.inputController = inputController;
         }
         bootstrapModels() {
-            this._systemModel.gridModel = new GridModel_1.GridModel(this._systemModel.eventHub);
+            this._systemModel.gridModel = new GridStateController_1.GridStateController(this._systemModel.eventHub);
             this._systemModel.gravityStateModel = new GravityStateModel_1.GravityStateModel(this._systemModel.eventHub);
             this._systemModel.scoreModel = new ScoreModel_1.ScoreModel(this._systemModel.eventHub);
         }
@@ -1745,21 +1876,34 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
             let controlPanelView = new ControlPanelView_1.ControlPanelView(this._game, controlPanelLayerGroup);
             let controlPanelMediator = new ControlPanelMediator_1.ControlPanelMediator(this._systemModel.scoreModel, controlPanelView, this._systemModel.eventHub);
         }
+        bootstrapSound() {
+            let soundController = new SoundController_1.SoundController(this._game, this._systemModel.eventHub);
+            soundController.initialise();
+            this._systemModel.soundController = soundController;
+        }
+        bootstrapTimer() {
+            // It might look here like nothing is holding a reference to this, so GC is a threat.
+            // But actually, it's events tether it to the event hub. Could go in the system model, to be sure, but time and stuff.
+            let timer = new Timer_2.Timer(this._game, this._systemModel.eventHub);
+        }
         get systemModel() {
             return this._systemModel;
         }
     }
     exports.Startup = Startup;
 });
-define("GravityBreak", ["require", "exports", "System/Startup"], function (require, exports, Startup_1) {
+define("GravityBreak", ["require", "exports", "System/Startup", "System/Assets"], function (require, exports, Startup_1, Assets_4) {
     "use strict";
     class GravityBreakGame {
         constructor() {
             this.game = new Phaser.Game(800, 600, Phaser.AUTO, 'content', { preload: this.preload, create: this.create });
         }
         preload() {
-            this.game.load.spritesheet("diamonds", "assets/diamonds32x5.png", 64, 64, 5);
-            this.game.load.image("planet", "assets/rock-planet.png");
+            this.game.load.spritesheet(Assets_4.Assets.SpriteDiamonds, "assets/diamonds32x5.png", 64, 64, 5);
+            this.game.load.image(Assets_4.Assets.SpritePlanet, "assets/rock-planet.png");
+            this.game.load.audio(Assets_4.Assets.SFXBreak, "assets/break-sfx.wav");
+            this.game.load.audio(Assets_4.Assets.SFXCascade, "assets/cascading-sfx.wav");
+            this.game.load.audio(Assets_4.Assets.SFXBgm, "assets/totally-open-source-bgm.mp3");
             this.game.stage.backgroundColor = 0x000000;
         }
         create() {

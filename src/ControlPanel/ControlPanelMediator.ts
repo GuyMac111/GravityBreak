@@ -3,6 +3,7 @@ import { Mediator } from "../System/Mediator";
 import { ControlPanelView } from "./ControlPanelView";
 import { InputEvents } from "../Input/InputEvents";
 import { ScoreModel } from "../Score/ScoreModel";
+import { TimerEvents } from "../System/Time/TimerEvents";
 
 export class ControlPanelMediator extends Mediator{
     private _controlPanelView: ControlPanelView;
@@ -10,6 +11,7 @@ export class ControlPanelMediator extends Mediator{
     
     constructor(injectedScoreModel: ScoreModel ,injectedView: ControlPanelView, injectedEventHub: EventHub){
         super(injectedEventHub);
+        this.addEventListener(TimerEvents.TimeIntervalElapsedEvent, this.onUpdateTimerEvent.bind(this));
         this._scoreModel = injectedScoreModel;
         this._scoreModel.scoreUpdated = this.onScoreUpdated.bind(this);
         this._controlPanelView = injectedView;
@@ -28,5 +30,9 @@ export class ControlPanelMediator extends Mediator{
 
     private onScoreUpdated(newScore: number, additionalAmount: number): void{
         this._controlPanelView.updateScore(newScore, additionalAmount);
+    }
+
+    private onUpdateTimerEvent(timeRemaining: number): void{
+        this._controlPanelView.updateTimer(timeRemaining);
     }
 } 
