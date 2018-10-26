@@ -1,5 +1,6 @@
 import { Startup } from "./System/Startup";
 import { Assets } from "./System/Assets";
+import { TestFilterView } from "./TestFilterView";
 
 class GravityBreakGame{
 	game:Phaser.Game;
@@ -18,8 +19,10 @@ class GravityBreakGame{
 	}
 	
 	create(){
-		let startup: Startup = new Startup(this.game);
-		startup.initialiseGame();
+		// let startup: Startup = new Startup(this.game);
+		// startup.initialiseGame();
+
+		let spriteTest = new TestFilterView(this.game);
 	}
 }
 

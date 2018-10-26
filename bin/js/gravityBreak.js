@@ -1892,23 +1892,58 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
     }
     exports.Startup = Startup;
 });
-define("GravityBreak", ["require", "exports", "System/Startup", "System/Assets"], function (require, exports, Startup_1, Assets_4) {
+define("TestFilterView", ["require", "exports", "System/Assets"], function (require, exports, Assets_4) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class TestFilterView {
+        constructor(game) {
+            this._diamondSprite = game.add.sprite(game.width / 2, game.height / 2, Assets_4.Assets.SpriteDiamonds, 0);
+            this._diamondSprite.filters = [new MyShader(game, null, null)];
+            this._diamondSprite.anchor = new Phaser.Point(0.5, 0.5);
+        }
+    }
+    exports.TestFilterView = TestFilterView;
+    class Uniforms {
+    }
+    class MyShader extends Phaser.Filter {
+        constructor(game, uniforms, fragmentSrc) {
+            let mUniforms = new Uniforms();
+            mUniforms.gray = { type: '1f', value: 1.0 };
+            let mfragmentSrc = [
+                "precision mediump float;",
+                "varying vec2       vTextureCoord;",
+                "varying vec4       vColor;",
+                "uniform sampler2D  uSampler;",
+                "uniform float      gray;",
+                "void main(void) {",
+                "gl_FragColor = texture2D(uSampler, vTextureCoord);",
+                "gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.2126 * gl_FragColor.r",
+                "+ 0.7152 * gl_FragColor.g + 0.0722 * gl_FragColor.b), gray);",
+                "}"
+            ];
+            super(game, mUniforms, mfragmentSrc);
+        }
+    }
+    exports.MyShader = MyShader;
+});
+define("GravityBreak", ["require", "exports", "System/Assets", "TestFilterView"], function (require, exports, Assets_5, TestFilterView_1) {
     "use strict";
     class GravityBreakGame {
         constructor() {
             this.game = new Phaser.Game(800, 600, Phaser.AUTO, 'content', { preload: this.preload, create: this.create });
         }
         preload() {
-            this.game.load.spritesheet(Assets_4.Assets.SpriteDiamonds, "assets/diamonds32x5.png", 64, 64, 5);
-            this.game.load.image(Assets_4.Assets.SpritePlanet, "assets/rock-planet.png");
-            this.game.load.audio(Assets_4.Assets.SFXBreak, "assets/break-sfx.wav");
-            this.game.load.audio(Assets_4.Assets.SFXCascade, "assets/cascading-sfx.wav");
-            this.game.load.audio(Assets_4.Assets.SFXBgm, "assets/totally-open-source-bgm.mp3");
+            this.game.load.spritesheet(Assets_5.Assets.SpriteDiamonds, "assets/diamonds32x5.png", 64, 64, 5);
+            this.game.load.image(Assets_5.Assets.SpritePlanet, "assets/rock-planet.png");
+            this.game.load.audio(Assets_5.Assets.SFXBreak, "assets/break-sfx.wav");
+            this.game.load.audio(Assets_5.Assets.SFXCascade, "assets/cascading-sfx.wav");
+            this.game.load.audio(Assets_5.Assets.SFXBgm, "assets/totally-open-source-bgm.mp3");
             this.game.stage.backgroundColor = 0x000000;
         }
         create() {
-            let startup = new Startup_1.Startup(this.game);
-            startup.initialiseGame();
+            // let startup: Startup = new Startup(this.game);
+            // startup.initialiseGame();
+            let spriteTest = new TestFilterView_1.TestFilterView(this.game);
         }
     }
     return GravityBreakGame;
