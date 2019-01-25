@@ -10,7 +10,7 @@ import { Dictionary } from "typescript-collections";
 
 export class CascadeStrategyProvider{
 
-    private _gravityStateModel: GravityStateModel;y;
+    private _gravityStateModel: GravityStateModel;
     private _strategyStateMap: Dictionary<GravityState, ICascadeStrategy>;
 
         

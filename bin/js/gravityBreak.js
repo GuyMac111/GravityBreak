@@ -1466,9 +1466,9 @@ define("Gravity/GravityStateModel", ["require", "exports", "Gravity/GravityState
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class GravityStateModel extends EventHandler_5.EventHandler {
-        constructor(injectedEventHub) {
+        constructor(injectedEventHub, gameConfig) {
             super(injectedEventHub);
-            this._currentState = GravityState_1.GravityState.Down;
+            this._currentState = gameConfig.cascadeDirection;
             this.addEventListener(GravityEvent_2.GravityEvents.GravityRotateLeftEvent, this.onGravityRotateLeftEvent.bind(this));
             this.addEventListener(GravityEvent_2.GravityEvents.GravityRotateRightEvent, this.onGravityRotateRightEvent.bind(this));
         }
@@ -2074,7 +2074,7 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
         }
         bootstrapModels() {
             this._systemModel.gridModel = new GridStateController_1.GridStateController(this._systemModel.eventHub);
-            this._systemModel.gravityStateModel = new GravityStateModel_1.GravityStateModel(this._systemModel.eventHub);
+            this._systemModel.gravityStateModel = new GravityStateModel_1.GravityStateModel(this._systemModel.eventHub, this._gameConfig);
             this._systemModel.scoreModel = new ScoreModel_1.ScoreModel(this._systemModel.eventHub);
         }
         bootstrapNodes() {

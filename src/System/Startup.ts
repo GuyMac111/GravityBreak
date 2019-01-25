@@ -83,7 +83,7 @@ export class Startup{
 
     private bootstrapModels(): void {
         this._systemModel.gridModel = new GridStateController(this._systemModel.eventHub); 
-        this._systemModel.gravityStateModel = new GravityStateModel(this._systemModel.eventHub);
+        this._systemModel.gravityStateModel = new GravityStateModel(this._systemModel.eventHub, this._gameConfig);
         this._systemModel.scoreModel = new ScoreModel(this._systemModel.eventHub);
     }
 

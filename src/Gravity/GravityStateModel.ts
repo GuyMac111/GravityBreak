@@ -2,13 +2,14 @@ import { GravityState } from "./GravityState";
 import { EventHandler } from "../System/Events/EventHandler";
 import { EventHub } from "../System/Events/EventHub";
 import { GravityEvents } from "./GravityEvent";
+import { IGameConfigModel } from "../System/Config/GameConfigModel";
 
 export class GravityStateModel extends EventHandler{
     private _currentState: GravityState;
     
-    constructor(injectedEventHub: EventHub){
+    constructor(injectedEventHub: EventHub, gameConfig: IGameConfigModel){
         super(injectedEventHub);
-        this._currentState = GravityState.Down;
+        this._currentState = gameConfig.cascadeDirection;
         this.addEventListener(GravityEvents.GravityRotateLeftEvent, this.onGravityRotateLeftEvent.bind(this));
         this.addEventListener(GravityEvents.GravityRotateRightEvent, this.onGravityRotateRightEvent.bind(this));
     }
