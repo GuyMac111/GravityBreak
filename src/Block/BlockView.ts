@@ -1,18 +1,18 @@
 import { View } from "../System/View";
 import { BlockColour } from "./BlockColour";
 import { Assets } from "../System/Assets";
+import { IGameConfigModel } from "../System/Config/GameConfigModel";
 
-export class BlockView extends View{
-    private readonly SELECTION_SPEED: number = 200;
-    private readonly SPRITE_OFFSET: number = 32;//We know the blocks are square and we want them at their center.
-
+export class BlockView extends View{    
     private _diamondSprite: Phaser.Sprite;
+    private _gameConfig: IGameConfigModel;
 
     onTouch: ()=>void;
     playDestructionAudio: ()=>void;
 
-    constructor(injectedGame: Phaser.Game, layerGroup: Phaser.Group){
+    constructor(injectedGame: Phaser.Game, layerGroup: Phaser.Group, gameConfig: IGameConfigModel){
         super(injectedGame, layerGroup);
+        this._gameConfig = gameConfig;
     }
 
     initialise(startingGridCoordinates: Phaser.Point, colour: BlockColour){
@@ -53,7 +53,7 @@ export class BlockView extends View{
         let tween:Phaser.Tween = this.game.add.tween(this._diamondSprite.scale).to({
             x: 1.2,
             y: 1.2
-        }, this.SELECTION_SPEED, Phaser.Easing.Bounce.Out);
+        }, this._gameConfig.blockSelectionDuration, Phaser.Easing.Bounce.Out);
         tween.start();
     }
 
@@ -61,7 +61,7 @@ export class BlockView extends View{
         let tween:Phaser.Tween = this.game.add.tween(this._diamondSprite.scale).to({
             x: 1,
             y: 1
-        }, this.SELECTION_SPEED, Phaser.Easing.Bounce.Out)
+        }, this._gameConfig.blockSelectionDuration, Phaser.Easing.Bounce.Out)
         tween.start();
     }
 
@@ -78,6 +78,10 @@ export class BlockView extends View{
         this._diamondSprite.destroy();
     }
 
+    private get spriteCenterOffset(): number{
+        return this._gameConfig.blockSize/2;
+    }
+
     private onBlockTouched(): void{
         if(this.onTouch!=undefined){
             this.onTouch();
@@ -85,6 +89,9 @@ export class BlockView extends View{
     }
 
     private translateGridCoordsToWorld(gridCoords: Phaser.Point): Phaser.Point{
-        return new Phaser.Point(gridCoords.x*64+this.SPRITE_OFFSET, gridCoords.y*64+this.SPRITE_OFFSET);
+        return new Phaser.Point(
+                gridCoords.x*(this._gameConfig.blockSize+this._gameConfig.blockPadding)+this.spriteCenterOffset, 
+                gridCoords.y*(this._gameConfig.blockSize+this._gameConfig.blockPadding)+this.spriteCenterOffset
+            );
     }
 }

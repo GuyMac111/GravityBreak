@@ -1,6 +1,7 @@
 import { View } from "../System/View";
 import { Graphics, Rectangle, Text, Tween } from "phaser";
 import { Timer } from "../System/Time/Timer";
+import { IGameConfigModel, GameConfigModel } from "../System/Config/GameConfigModel";
 
 export class ControlPanelView extends View{
     private readonly ROTATE_LEFT_DIMS: Rectangle = new Phaser.Rectangle(600,340,180,100);
@@ -10,6 +11,7 @@ export class ControlPanelView extends View{
     private readonly TIME_POS: Phaser.Point = new Phaser.Point(640, 80);
     private readonly SCORE_TWEEN_DURATION: number = 500;
     
+    private _gameConfig: IGameConfigModel;
     private _backgroundPanel: Graphics;
     private _rotateLeftButton: Graphics;
     private _rotateRightButton: Graphics;
@@ -21,8 +23,9 @@ export class ControlPanelView extends View{
     rotateLeftTouched: ()=> void;
     rotateRightTouched: ()=> void;
 
-    constructor(injectedGame:Phaser.Game, injectedLayerGroup: Phaser.Group){
+    constructor(injectedGame:Phaser.Game, injectedLayerGroup: Phaser.Group, gameConfig: IGameConfigModel){
         super(injectedGame, injectedLayerGroup);
+        this._gameConfig = gameConfig;
     }
 
     initialise(): void{
@@ -44,7 +47,7 @@ export class ControlPanelView extends View{
     }
 
     initiliseTimer(): void{
-        this._timeRemainingtext = this.game.add.text(this.TIME_POS.x,this.TIME_POS.y,`TIME\n${Timer.ROUND_TIME}`, this._textStyle, this.layerGroup);
+        this._timeRemainingtext = this.game.add.text(this.TIME_POS.x,this.TIME_POS.y,`TIME\n${this._gameConfig.time}`, this._textStyle, this.layerGroup);
     }
 
     initialiseScore(): void{

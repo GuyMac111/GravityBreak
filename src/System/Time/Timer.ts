@@ -1,19 +1,18 @@
 import { EventHub } from "../Events/EventHub";
 import { EventHandler } from "../Events/EventHandler";
-import { TimerEvent } from "phaser";
+import { TimerEvent, Game } from "phaser";
 import { TimerEvents } from "./TimerEvents";
+import { IGameConfigModel } from "../Config/GameConfigModel";
 
-export class Timer extends EventHandler{
-    public static readonly ROUND_TIME: number = 100;
-    
+export class Timer extends EventHandler{ 
     private _timeRemaining: number;
     private _timerEvent: TimerEvent;
     private _game: Phaser.Game;
 
-    constructor(injectedGame:Phaser.Game, injectedEventHub: EventHub){
+    constructor(injectedGame:Phaser.Game, injectedEventHub: EventHub, gameConfig: IGameConfigModel){
         super(injectedEventHub);
         this._game = injectedGame;
-        this._timeRemaining = Timer.ROUND_TIME;
+        this._timeRemaining = gameConfig.time;
         this.addEventListener(TimerEvents.StartTimeEvent, this.onStartTimerEvent.bind(this));
     }
     

@@ -3,13 +3,18 @@
         "gridPositionX": 10,
         "gridPositionY": 10,
         "gridWidth": 6,
-        "gridHeight": 6,
+        "gridHeight": 7,
         "cascadeDirection": "Down",
         "maskGrid": true
     },
     "blocks":{
-        "blockPadding": 0,
-        "blockSize": 64
+        "blockPadding": 5,
+        "blockSize": 64,
+        "selectionDuration": 100,
+        "fallDuration": 200,
+        "initialSpawnFallDuration": 7,
+        "respawnFallDuration": 50,
+        "swapDuration": 500
     },
     "time": 60,
     "targetScore":100000

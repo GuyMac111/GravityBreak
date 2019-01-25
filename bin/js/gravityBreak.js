@@ -125,14 +125,237 @@ define("System/Assets", ["require", "exports"], function (require, exports) {
     Assets.SFXBgm = "bgm";
     exports.Assets = Assets;
 });
+define("Gravity/GravityState", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var GravityState;
+    (function (GravityState) {
+        GravityState[GravityState["Up"] = 0] = "Up";
+        GravityState[GravityState["Down"] = 1] = "Down";
+        GravityState[GravityState["Left"] = 2] = "Left";
+        GravityState[GravityState["Right"] = 3] = "Right";
+    })(GravityState = exports.GravityState || (exports.GravityState = {}));
+});
+define("Block/BlockDestroyAnimation", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var BlockDestroyAnimation;
+    (function (BlockDestroyAnimation) {
+        BlockDestroyAnimation[BlockDestroyAnimation["Warp"] = 0] = "Warp";
+        BlockDestroyAnimation[BlockDestroyAnimation["Shrink"] = 1] = "Shrink";
+        BlockDestroyAnimation[BlockDestroyAnimation["Fade"] = 2] = "Fade";
+    })(BlockDestroyAnimation = exports.BlockDestroyAnimation || (exports.BlockDestroyAnimation = {}));
+});
+define("System/Config/GameConfigModel", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GameConfigModel {
+        /**
+         * Getter blockInitialSpawnFallDuration
+         * @return {number}
+         */
+        get blockInitialSpawnFallDuration() {
+            return this._blockInitialSpawnFallDuration;
+        }
+        /**
+         * Setter blockInitialSpawnFallDuration
+         * @param {number} value
+         */
+        set blockInitialSpawnFallDuration(value) {
+            this._blockInitialSpawnFallDuration = value;
+        }
+        /**
+         * Getter blockRepawnFallDuration
+         * @return {number}
+         */
+        get blockRepawnFallDuration() {
+            return this._blockRepawnFallDuration;
+        }
+        /**
+         * Setter blockRepawnFallDuration
+         * @param {number} value
+         */
+        set blockRepawnFallDuration(value) {
+            this._blockRepawnFallDuration = value;
+        }
+        /**
+         * Getter blockSwapDuration
+         * @return {number}
+         */
+        get blockSwapDuration() {
+            return this._blockSwapDuration;
+        }
+        /**
+         * Setter blockSwapDuration
+         * @param {number} value
+         */
+        set blockSwapDuration(value) {
+            this._blockSwapDuration = value;
+        }
+        /**
+         * Getter blockFallDuration
+         * @return {number}
+         */
+        get blockFallDuration() {
+            return this._blockFallDuration;
+        }
+        /**
+         * Setter blockFallDuration
+         * @param {number} value
+         */
+        set blockFallDuration(value) {
+            this._blockFallDuration = value;
+        }
+        /**
+         * Getter blockSelectionSpeed
+         * @return {number}
+         */
+        get blockSelectionDuration() {
+            return this._blockSelectionDuration;
+        }
+        /**
+         * Setter blockSelectionSpeed
+         * @param {number} value
+         */
+        set blockSelectionDuration(value) {
+            this._blockSelectionDuration = value;
+        }
+        /**
+         * Getter gridPosition
+         * @return {Phaser.Point}
+         */
+        get gridPosition() {
+            return this._gridPosition;
+        }
+        /**
+         * Setter gridPosition
+         * @param {Phaser.Point} value
+         */
+        set gridPosition(value) {
+            this._gridPosition = value;
+        }
+        /**
+         * Getter gridSize
+         * @return {Phaser.Point}
+         */
+        get gridSize() {
+            return this._gridSize;
+        }
+        /**
+         * Setter gridSize
+         * @param {Phaser.Point} value
+         */
+        set gridSize(value) {
+            this._gridSize = value;
+        }
+        /**
+         * Getter maskGridBounds
+         * @return {boolean}
+         */
+        get maskGridBounds() {
+            return this._maskGridBounds;
+        }
+        /**
+         * Setter maskGridBounds
+         * @param {boolean} value
+         */
+        /**
+         * Getter blockPadding
+         * @return {number}
+         */
+        get blockPadding() {
+            return this._blockPadding;
+        }
+        /**
+         * Setter blockPadding
+         * @param {number} value
+         */
+        set blockPadding(value) {
+            this._blockPadding = value;
+        }
+        /**
+         * Getter blockSize
+         * @return {number}
+         */
+        get blockSize() {
+            return this._blockSize;
+        }
+        /**
+         * Setter blockSize
+         * @param {Phaser.Point} value
+         */
+        set blockSize(value) {
+            this._blockSize = value;
+        }
+        set maskGridBounds(value) {
+            this._maskGridBounds = value;
+        }
+        /**
+         * Getter $cascadeDirection
+         * @return {GravityState}
+         */
+        get cascadeDirection() {
+            return this._cascadeDirection;
+        }
+        /**
+         * Setter $cascadeDirection
+         * @param {GravityState} value
+         */
+        set cascadeDirection(value) {
+            this._cascadeDirection = value;
+        }
+        /**
+         * Getter $blockDestroyAnimation
+         * @return {BlockDestroyAnimation}
+         */
+        get blockDestroyAnimation() {
+            return this._blockDestroyAnimation;
+        }
+        /**
+         * Setter $blockDestroyAnimation
+         * @param {BlockDestroyAnimation} value
+         */
+        set blockDestroyAnimation(value) {
+            this._blockDestroyAnimation = value;
+        }
+        /**
+         * Getter time
+         * @return {number}
+         */
+        get time() {
+            return this._time;
+        }
+        /**
+         * Setter time
+         * @param {number} value
+         */
+        set time(value) {
+            this._time = value;
+        }
+        /**
+         * Getter targetScore
+         * @return {number}
+         */
+        get targetScore() {
+            return this._targetScore;
+        }
+        /**
+         * Setter targetScore
+         * @param {number} value
+         */
+        set targetScore(value) {
+            this._targetScore = value;
+        }
+    }
+    exports.GameConfigModel = GameConfigModel;
+});
 define("Block/BlockView", ["require", "exports", "System/View", "System/Assets"], function (require, exports, View_1, Assets_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class BlockView extends View_1.View {
-        constructor(injectedGame, layerGroup) {
+        constructor(injectedGame, layerGroup, gameConfig) {
             super(injectedGame, layerGroup);
-            this.SELECTION_SPEED = 200;
-            this.SPRITE_OFFSET = 32; //We know the blocks are square and we want them at their center.
+            this._gameConfig = gameConfig;
         }
         initialise(startingGridCoordinates, colour) {
             let startingCoords = this.translateGridCoordsToWorld(startingGridCoordinates);
@@ -167,14 +390,14 @@ define("Block/BlockView", ["require", "exports", "System/View", "System/Assets"]
             let tween = this.game.add.tween(this._diamondSprite.scale).to({
                 x: 1.2,
                 y: 1.2
-            }, this.SELECTION_SPEED, Phaser.Easing.Bounce.Out);
+            }, this._gameConfig.blockSelectionDuration, Phaser.Easing.Bounce.Out);
             tween.start();
         }
         showBlockUnselected() {
             let tween = this.game.add.tween(this._diamondSprite.scale).to({
                 x: 1,
                 y: 1
-            }, this.SELECTION_SPEED, Phaser.Easing.Bounce.Out);
+            }, this._gameConfig.blockSelectionDuration, Phaser.Easing.Bounce.Out);
             tween.start();
         }
         showBlockDestroyAnimation(delay, onStart, onComplete) {
@@ -188,13 +411,16 @@ define("Block/BlockView", ["require", "exports", "System/View", "System/Assets"]
         destroySpriteInstance() {
             this._diamondSprite.destroy();
         }
+        get spriteCenterOffset() {
+            return this._gameConfig.blockSize / 2;
+        }
         onBlockTouched() {
             if (this.onTouch != undefined) {
                 this.onTouch();
             }
         }
         translateGridCoordsToWorld(gridCoords) {
-            return new Phaser.Point(gridCoords.x * 64 + this.SPRITE_OFFSET, gridCoords.y * 64 + this.SPRITE_OFFSET);
+            return new Phaser.Point(gridCoords.x * (this._gameConfig.blockSize + this._gameConfig.blockPadding) + this.spriteCenterOffset, gridCoords.y * (this._gameConfig.blockSize + this._gameConfig.blockPadding) + this.spriteCenterOffset);
         }
     }
     exports.BlockView = BlockView;
@@ -276,7 +502,7 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class BlockMediator extends Mediator_1.Mediator {
-        constructor(startingGridPosition, colour, injectedView, injectedEventHub) {
+        constructor(startingGridPosition, colour, injectedView, injectedEventHub, gameConfig) {
             super(injectedEventHub);
             this.SPAWN_DURATION = 7;
             this.RESPAWN_DURATION = 50;
@@ -284,24 +510,25 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
             this.CASCADE_DURATION = 200;
             this._isLastBlockToCascade = false;
             this._blockView = injectedView;
+            this._gameConfig = gameConfig;
             this._blockColour = colour;
             this._blockView.initialise(startingGridPosition, this._blockColour);
             this._blockView.onTouch = this.onViewTouched.bind(this);
         }
         spawnBlockTo(gridDestination) {
-            this._blockView.moveToPosition(gridDestination, this.SPAWN_DURATION, this.onBlockMoveComplete.bind(this));
+            this._blockView.moveToPosition(gridDestination, this._gameConfig.blockInitialSpawnFallDuration, this.onBlockMoveComplete.bind(this));
         }
         respawnBlockTo(gridDestination) {
             this.dispatchEvent(SoundEvents_1.SoundEvents.PlayCascadeEvent);
-            this._blockView.moveToPosition(gridDestination, this.RESPAWN_DURATION, this.onBlockMoveComplete.bind(this));
+            this._blockView.moveToPosition(gridDestination, this._gameConfig.blockRepawnFallDuration, this.onBlockMoveComplete.bind(this));
         }
         swapBlockTo(gridDestination) {
-            this._blockView.moveToPosition(gridDestination, this.SWAP_DURATION, this.onBlockMoveComplete.bind(this));
+            this._blockView.moveToPosition(gridDestination, this._gameConfig.blockSwapDuration, this.onBlockMoveComplete.bind(this));
         }
         cascadeBlockTo(gridDestination, isLastBlockToCascade) {
             this._isLastBlockToCascade = isLastBlockToCascade;
             this._cascadeDestination = gridDestination;
-            this._blockView.moveToPosition(gridDestination, this.CASCADE_DURATION, this.onCascadeMovementComplete.bind(this));
+            this._blockView.moveToPosition(gridDestination, this._gameConfig.blockFallDuration, this.onCascadeMovementComplete.bind(this));
         }
         onCascadeMovementComplete() {
             let lastToCascade = this._isLastBlockToCascade;
@@ -352,14 +579,15 @@ define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Bloc
         //with absolutely everything they need.
         //It's also going to substitute as a VERY hamfisted Dependency Injector for those classes.
         //But as it also needs an instance of game, it's also going to need to be "injected" with "game".
-        constructor(game, blockLayerGroup, injectedEventHub) {
+        constructor(game, blockLayerGroup, injectedEventHub, gameConfig) {
             this._game = game;
             this._blocksLayerGroup = blockLayerGroup;
             this._eventHub = injectedEventHub;
+            this._gameConfig = gameConfig;
         }
         createBlockAtPosition(startingPosition) {
             let view = this.createBlockView();
-            let mediator = new BlockMediator_1.BlockMediator(startingPosition, this.generateRandomColour(), view, this._eventHub);
+            let mediator = new BlockMediator_1.BlockMediator(startingPosition, this.generateRandomColour(), view, this._eventHub, this._gameConfig);
             return mediator;
         }
         generateRandomColour() {
@@ -369,7 +597,7 @@ define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Bloc
             return randomEnumInt;
         }
         createBlockView() {
-            let blockView = new BlockView_1.BlockView(this._game, this._blocksLayerGroup);
+            let blockView = new BlockView_1.BlockView(this._game, this._blocksLayerGroup, this._gameConfig);
             return blockView;
         }
     }
@@ -1220,17 +1448,6 @@ define("Cascade/RightCascadeStrategy", ["require", "exports", "Cascade/BaseCasca
     }
     exports.RightCascadeStrategy = RightCascadeStrategy;
 });
-define("Gravity/GravityState", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var GravityState;
-    (function (GravityState) {
-        GravityState[GravityState["Up"] = 0] = "Up";
-        GravityState[GravityState["Down"] = 1] = "Down";
-        GravityState[GravityState["Left"] = 2] = "Left";
-        GravityState[GravityState["Right"] = 3] = "Right";
-    })(GravityState = exports.GravityState || (exports.GravityState = {}));
-});
 define("Gravity/GravityStateModel", ["require", "exports", "Gravity/GravityState", "System/Events/EventHandler", "Gravity/GravityEvent"], function (require, exports, GravityState_1, EventHandler_5, GravityEvent_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1675,10 +1892,10 @@ define("System/Time/Timer", ["require", "exports", "System/Events/EventHandler",
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Timer extends EventHandler_9.EventHandler {
-        constructor(injectedGame, injectedEventHub) {
+        constructor(injectedGame, injectedEventHub, gameConfig) {
             super(injectedEventHub);
             this._game = injectedGame;
-            this._timeRemaining = Timer.ROUND_TIME;
+            this._timeRemaining = gameConfig.time;
             this.addEventListener(TimerEvents_3.TimerEvents.StartTimeEvent, this.onStartTimerEvent.bind(this));
         }
         onStartTimerEvent() {
@@ -1698,14 +1915,13 @@ define("System/Time/Timer", ["require", "exports", "System/Events/EventHandler",
             }
         }
     }
-    Timer.ROUND_TIME = 100;
     exports.Timer = Timer;
 });
-define("ControlPanel/ControlPanelView", ["require", "exports", "System/View", "System/Time/Timer"], function (require, exports, View_3, Timer_1) {
+define("ControlPanel/ControlPanelView", ["require", "exports", "System/View"], function (require, exports, View_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class ControlPanelView extends View_3.View {
-        constructor(injectedGame, injectedLayerGroup) {
+        constructor(injectedGame, injectedLayerGroup, gameConfig) {
             super(injectedGame, injectedLayerGroup);
             this.ROTATE_LEFT_DIMS = new Phaser.Rectangle(600, 340, 180, 100);
             this.ROTATE_RIGHT_DIMS = new Phaser.Rectangle(600, 460, 180, 100);
@@ -1714,6 +1930,7 @@ define("ControlPanel/ControlPanelView", ["require", "exports", "System/View", "S
             this.TIME_POS = new Phaser.Point(640, 80);
             this.SCORE_TWEEN_DURATION = 500;
             this._textStyle = { font: "37px Arial", fill: "#000000", align: "center" };
+            this._gameConfig = gameConfig;
         }
         initialise() {
             this.initialiseButtons();
@@ -1731,7 +1948,7 @@ define("ControlPanel/ControlPanelView", ["require", "exports", "System/View", "S
             return this._score;
         }
         initiliseTimer() {
-            this._timeRemainingtext = this.game.add.text(this.TIME_POS.x, this.TIME_POS.y, `TIME\n${Timer_1.Timer.ROUND_TIME}`, this._textStyle, this.layerGroup);
+            this._timeRemainingtext = this.game.add.text(this.TIME_POS.x, this.TIME_POS.y, `TIME\n${this._gameConfig.time}`, this._textStyle, this.layerGroup);
         }
         initialiseScore() {
             this._scoreText = this.game.add.text(this.SCORE_POS.x, this.SCORE_POS.y, `SCORE\n${this._score}`, this._textStyle, this.layerGroup);
@@ -1808,150 +2025,7 @@ define("ControlPanel/ControlPanelMediator", ["require", "exports", "System/Media
     }
     exports.ControlPanelMediator = ControlPanelMediator;
 });
-define("Block/BlockDestroyAnimation", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var BlockDestroyAnimation;
-    (function (BlockDestroyAnimation) {
-        BlockDestroyAnimation[BlockDestroyAnimation["Warp"] = 0] = "Warp";
-        BlockDestroyAnimation[BlockDestroyAnimation["Shrink"] = 1] = "Shrink";
-        BlockDestroyAnimation[BlockDestroyAnimation["Fade"] = 2] = "Fade";
-    })(BlockDestroyAnimation = exports.BlockDestroyAnimation || (exports.BlockDestroyAnimation = {}));
-});
-define("System/Config/GameConfigModel", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    class GameConfigModel {
-        /**
-         * Getter gridPosition
-         * @return {Phaser.Point}
-         */
-        get gridPosition() {
-            return this._gridPosition;
-        }
-        /**
-         * Setter gridPosition
-         * @param {Phaser.Point} value
-         */
-        set gridPosition(value) {
-            this._gridPosition = value;
-        }
-        /**
-         * Getter gridSize
-         * @return {Phaser.Point}
-         */
-        get gridSize() {
-            return this._gridSize;
-        }
-        /**
-         * Setter gridSize
-         * @param {Phaser.Point} value
-         */
-        set gridSize(value) {
-            this._gridSize = value;
-        }
-        /**
-         * Getter maskGridBounds
-         * @return {boolean}
-         */
-        get maskGridBounds() {
-            return this._maskGridBounds;
-        }
-        /**
-         * Setter maskGridBounds
-         * @param {boolean} value
-         */
-        /**
-         * Getter blockPadding
-         * @return {Phaser.Point}
-         */
-        get blockPadding() {
-            return this._blockPadding;
-        }
-        /**
-         * Setter blockPadding
-         * @param {Phaser.Point} value
-         */
-        set blockPadding(value) {
-            this._blockPadding = value;
-        }
-        /**
-         * Getter blockSize
-         * @return {Phaser.Point}
-         */
-        get blockSize() {
-            return this._blockSize;
-        }
-        /**
-         * Setter blockSize
-         * @param {Phaser.Point} value
-         */
-        set blockSize(value) {
-            this._blockSize = value;
-        }
-        set maskGridBounds(value) {
-            this._maskGridBounds = value;
-        }
-        /**
-         * Getter $cascadeDirection
-         * @return {GravityState}
-         */
-        get cascadeDirection() {
-            return this._cascadeDirection;
-        }
-        /**
-         * Setter $cascadeDirection
-         * @param {GravityState} value
-         */
-        set cascadeDirection(value) {
-            this._cascadeDirection = value;
-        }
-        /**
-         * Getter $blockDestroyAnimation
-         * @return {BlockDestroyAnimation}
-         */
-        get blockDestroyAnimation() {
-            return this._blockDestroyAnimation;
-        }
-        /**
-         * Setter $blockDestroyAnimation
-         * @param {BlockDestroyAnimation} value
-         */
-        set blockDestroyAnimation(value) {
-            this._blockDestroyAnimation = value;
-        }
-        /**
-         * Getter time
-         * @return {number}
-         */
-        get time() {
-            return this._time;
-        }
-        /**
-         * Setter time
-         * @param {number} value
-         */
-        set time(value) {
-            this._time = value;
-        }
-        /**
-         * Getter targetScore
-         * @return {number}
-         */
-        get targetScore() {
-            return this._targetScore;
-        }
-        /**
-         * Setter targetScore
-         * @param {number} value
-         */
-        set targetScore(value) {
-            this._targetScore = value;
-        }
-    }
-    exports.GameConfigModel = GameConfigModel;
-});
-define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/SystemModel", "Grid/GridController", "System/Events/EventHub", "Grid/GridEvents", "Input/InputController", "Grid/GridStateController", "Grid/GridEvaluator", "Grid/NodeMeshFactory", "Gravity/GravityStateModel", "Cascade/CascadeStrategyProvider", "Background/PlanetView", "Background/PlanetMediator", "ControlPanel/ControlPanelView", "ControlPanel/ControlPanelMediator", "Score/ScoreModel", "System/Time/Timer", "Sound/SoundController"], function (require, exports, BlockFactory_1, SystemModel_1, GridController_1, EventHub_1, GridEvents_4, InputController_1, GridStateController_1, GridEvaluator_1, NodeMeshFactory_1, GravityStateModel_1, CascadeStrategyProvider_1, PlanetView_1, PlanetMediator_1, ControlPanelView_1, ControlPanelMediator_1, ScoreModel_1, Timer_2, SoundController_1) {
+define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/SystemModel", "Grid/GridController", "System/Events/EventHub", "Grid/GridEvents", "Input/InputController", "Grid/GridStateController", "Grid/GridEvaluator", "Grid/NodeMeshFactory", "Gravity/GravityStateModel", "Cascade/CascadeStrategyProvider", "Background/PlanetView", "Background/PlanetMediator", "ControlPanel/ControlPanelView", "ControlPanel/ControlPanelMediator", "Score/ScoreModel", "System/Time/Timer", "Sound/SoundController"], function (require, exports, BlockFactory_1, SystemModel_1, GridController_1, EventHub_1, GridEvents_4, InputController_1, GridStateController_1, GridEvaluator_1, NodeMeshFactory_1, GravityStateModel_1, CascadeStrategyProvider_1, PlanetView_1, PlanetMediator_1, ControlPanelView_1, ControlPanelMediator_1, ScoreModel_1, Timer_1, SoundController_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Startup {
@@ -1988,7 +2062,7 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
         }
         bootstrapBlockFactory() {
             let blockLayerGroup = this._game.add.group();
-            let blockFactory = new BlockFactory_1.BlockFactory(this._game, blockLayerGroup, this._systemModel.eventHub);
+            let blockFactory = new BlockFactory_1.BlockFactory(this._game, blockLayerGroup, this._systemModel.eventHub, this._gameConfig);
             this._systemModel.blockFactory = blockFactory;
         }
         bootstrapBackground() {
@@ -2017,7 +2091,7 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
         }
         bootstrapControlPanel() {
             let controlPanelLayerGroup = this._game.add.group();
-            let controlPanelView = new ControlPanelView_1.ControlPanelView(this._game, controlPanelLayerGroup);
+            let controlPanelView = new ControlPanelView_1.ControlPanelView(this._game, controlPanelLayerGroup, this._gameConfig);
             let controlPanelMediator = new ControlPanelMediator_1.ControlPanelMediator(this._systemModel.scoreModel, controlPanelView, this._systemModel.eventHub);
         }
         bootstrapSound() {
@@ -2028,7 +2102,7 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
         bootstrapTimer() {
             // It might look here like nothing is holding a reference to this, so GC is a threat.
             // But actually, it's events tether it to the event hub. Could go in the system model, to be sure, but time and stuff.
-            let timer = new Timer_2.Timer(this._game, this._systemModel.eventHub);
+            let timer = new Timer_1.Timer(this._game, this._systemModel.eventHub, this._gameConfig);
         }
         get systemModel() {
             return this._systemModel;
@@ -2043,6 +2117,8 @@ define("System/Config/GameConfigParser", ["require", "exports", "System/Config/G
         parse(configJson) {
             let configModel = new GameConfigModel_1.GameConfigModel();
             this.parseGridConfig(configJson, configModel);
+            this.parseBlocksConfig(configJson, configModel);
+            this.parseMiscConfig(configJson, configModel);
             return configModel;
         }
         parseGridConfig(configJson, configModel) {
@@ -2058,8 +2134,17 @@ define("System/Config/GameConfigParser", ["require", "exports", "System/Config/G
             configModel.cascadeDirection = GravityState_4.GravityState[cascadeDirectionID];
         }
         parseBlocksConfig(configJson, configModel) {
+            configModel.blockSize = configJson.blocks.blockSize;
+            configModel.blockPadding = configJson.blocks.blockPadding;
+            configModel.blockSelectionDuration = configJson.blocks.selectionDuration;
+            configModel.blockFallDuration = configJson.blocks.fallDuration;
+            configModel.blockInitialSpawnFallDuration = configJson.blocks.initialSpawnFallDuration;
+            configModel.blockRepawnFallDuration = configJson.blocks.respawnFallDuration;
+            configModel.blockSwapDuration = configJson.blocks.swapDuration;
         }
         parseMiscConfig(configJson, configModel) {
+            configModel.time = configJson.time;
+            configModel.targetScore = configJson.targetScore;
         }
     }
     exports.GameConfigParser = GameConfigParser;

@@ -5,8 +5,13 @@ export interface IGameConfigModel {
     gridPosition: Phaser.Point;
     gridSize: Phaser.Point;
     maskGridBounds: boolean;
-    blockPadding: Phaser.Point;
-    blockSize: Phaser.Point;
+    blockPadding: number;
+    blockSize: number;
+    blockSelectionDuration: number;
+    blockFallDuration: number;
+    blockInitialSpawnFallDuration: number;
+    blockRepawnFallDuration: number;
+    blockSwapDuration: number;
     cascadeDirection: GravityState;
     blockDestroyAnimation: BlockDestroyAnimation;
     time: number;
@@ -19,15 +24,103 @@ export class GameConfigModel {
     private _gridSize: Phaser.Point;
     private _maskGridBounds: boolean;
 
-    private _blockPadding: Phaser.Point;
-    private _blockSize: Phaser.Point;
+    private _blockPadding: number;
+    private _blockSize: number;
+    private _blockSelectionDuration: number;
 
+    private _blockFallDuration: number;
+    private _blockInitialSpawnFallDuration: number;
+    private _blockRepawnFallDuration: number;
+    private _blockSwapDuration: number;
+    
     private _cascadeDirection: GravityState;
     private _blockDestroyAnimation: BlockDestroyAnimation;
     
     private _time: number;
     private _targetScore: number;
 
+
+    /**
+     * Getter blockInitialSpawnFallDuration
+     * @return {number}
+     */
+	public get blockInitialSpawnFallDuration(): number {
+		return this._blockInitialSpawnFallDuration;
+	}
+
+    /**
+     * Setter blockInitialSpawnFallDuration
+     * @param {number} value
+     */
+	public set blockInitialSpawnFallDuration(value: number) {
+		this._blockInitialSpawnFallDuration = value;
+	}
+
+    /**
+     * Getter blockRepawnFallDuration
+     * @return {number}
+     */
+	public get blockRepawnFallDuration(): number {
+		return this._blockRepawnFallDuration;
+	}
+
+    /**
+     * Setter blockRepawnFallDuration
+     * @param {number} value
+     */
+	public set blockRepawnFallDuration(value: number) {
+		this._blockRepawnFallDuration = value;
+	}
+
+    /**
+     * Getter blockSwapDuration
+     * @return {number}
+     */
+	public get blockSwapDuration(): number {
+		return this._blockSwapDuration;
+	}
+
+    /**
+     * Setter blockSwapDuration
+     * @param {number} value
+     */
+	public set blockSwapDuration(value: number) {
+		this._blockSwapDuration = value;
+	}
+
+
+    /**
+     * Getter blockFallDuration
+     * @return {number}
+     */
+	public get blockFallDuration(): number {
+		return this._blockFallDuration;
+	}
+
+    /**
+     * Setter blockFallDuration
+     * @param {number} value
+     */
+	public set blockFallDuration(value: number) {
+		this._blockFallDuration = value;
+	}
+    
+    /**
+     * Getter blockSelectionSpeed
+     * @return {number}
+     */
+	public get blockSelectionDuration(): number {
+		return this._blockSelectionDuration;
+	}
+
+    /**
+     * Setter blockSelectionSpeed
+     * @param {number} value
+     */
+	public set blockSelectionDuration(value: number) {
+		this._blockSelectionDuration = value;
+	}
+    
     /**
      * Getter gridPosition
      * @return {Phaser.Point}
@@ -75,25 +168,25 @@ export class GameConfigModel {
 
     /**
      * Getter blockPadding
-     * @return {Phaser.Point}
+     * @return {number}
      */
-	public get blockPadding(): Phaser.Point {
+	public get blockPadding(): number {
 		return this._blockPadding;
 	}
 
     /**
      * Setter blockPadding
-     * @param {Phaser.Point} value
+     * @param {number} value
      */
-	public set blockPadding(value: Phaser.Point) {
+	public set blockPadding(value: number) {
 		this._blockPadding = value;
     }
     
     /**
      * Getter blockSize
-     * @return {Phaser.Point}
+     * @return {number}
      */
-	public get blockSize(): Phaser.Point {
+	public get blockSize(): number {
 		return this._blockSize;
 	}
 
@@ -101,7 +194,7 @@ export class GameConfigModel {
      * Setter blockSize
      * @param {Phaser.Point} value
      */
-	public set blockSize(value: Phaser.Point) {
+	public set blockSize(value: number) {
 		this._blockSize = value;
 	}
 
@@ -109,7 +202,6 @@ export class GameConfigModel {
 		this._maskGridBounds = value;
     }
     
-
     /**
      * Getter $cascadeDirection
      * @return {GravityState}

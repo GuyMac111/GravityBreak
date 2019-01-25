@@ -66,7 +66,7 @@ export class Startup{
 
     private bootstrapBlockFactory():void {
         let blockLayerGroup: Phaser.Group = this._game.add.group();
-        let blockFactory: BlockFactory = new BlockFactory(this._game, blockLayerGroup, this._systemModel.eventHub);
+        let blockFactory: BlockFactory = new BlockFactory(this._game, blockLayerGroup, this._systemModel.eventHub, this._gameConfig);
         this._systemModel.blockFactory = blockFactory;
     }
 
@@ -101,7 +101,7 @@ export class Startup{
 
     private bootstrapControlPanel(): void{
         let controlPanelLayerGroup: Phaser.Group = this._game.add.group();
-        let controlPanelView: ControlPanelView = new ControlPanelView(this._game, controlPanelLayerGroup);
+        let controlPanelView: ControlPanelView = new ControlPanelView(this._game, controlPanelLayerGroup, this._gameConfig);
         let controlPanelMediator: ControlPanelMediator = new ControlPanelMediator(this._systemModel.scoreModel,controlPanelView, this._systemModel.eventHub);
     }
 
@@ -114,7 +114,7 @@ export class Startup{
     private bootstrapTimer(): void{
         // It might look here like nothing is holding a reference to this, so GC is a threat.
         // But actually, it's events tether it to the event hub. Could go in the system model, to be sure, but time and stuff.
-        let timer: Timer = new Timer(this._game, this._systemModel.eventHub);
+        let timer: Timer = new Timer(this._game, this._systemModel.eventHub, this._gameConfig);
     }
 
     get systemModel(): ISystemModel{

@@ -5,6 +5,7 @@ import { EventHub } from "../System/Events/EventHub";
 import { BlockEvents } from "./BlockEvents";
 import { GridNode } from "../Grid/GridNode";
 import { SoundEvents } from "../Sound/SoundEvents";
+import { IGameConfigModel } from "../System/Config/GameConfigModel";
 
 export class BlockMediator extends Mediator{
     private readonly SPAWN_DURATION: number = 7;
@@ -16,6 +17,7 @@ export class BlockMediator extends Mediator{
     private _blockColour: BlockColour;
     private _isLastBlockToCascade: boolean = false;
     private _cascadeDestination: Phaser.Point;
+    private _gameConfig: IGameConfigModel;
     
     currentNode: GridNode;
 
@@ -23,31 +25,32 @@ export class BlockMediator extends Mediator{
     blockDestroyComplete: (completedBlock: BlockMediator)=>void;
     blockCascadeComplete: (destination: Phaser.Point, fallenBlock: BlockMediator, isLastBlockToCascade:boolean)=>void;
 
-    constructor(startingGridPosition: Phaser.Point, colour: BlockColour, injectedView:BlockView, injectedEventHub: EventHub){
+    constructor(startingGridPosition: Phaser.Point, colour: BlockColour, injectedView:BlockView, injectedEventHub: EventHub, gameConfig: IGameConfigModel){
         super(injectedEventHub);
         this._blockView = injectedView;
+        this._gameConfig = gameConfig;
         this._blockColour = colour;
         this._blockView.initialise(startingGridPosition, this._blockColour);
         this._blockView.onTouch = this.onViewTouched.bind(this);
     }
 
     spawnBlockTo(gridDestination: Phaser.Point): void{
-        this._blockView.moveToPosition(gridDestination, this.SPAWN_DURATION,this.onBlockMoveComplete.bind(this));
+        this._blockView.moveToPosition(gridDestination, this._gameConfig.blockInitialSpawnFallDuration,this.onBlockMoveComplete.bind(this));
     }
 
     respawnBlockTo(gridDestination: Phaser.Point): void{
         this.dispatchEvent(SoundEvents.PlayCascadeEvent);
-        this._blockView.moveToPosition(gridDestination, this.RESPAWN_DURATION,this.onBlockMoveComplete.bind(this));
+        this._blockView.moveToPosition(gridDestination, this._gameConfig.blockRepawnFallDuration,this.onBlockMoveComplete.bind(this));
     }
 
     swapBlockTo(gridDestination: Phaser.Point): void {
-        this._blockView.moveToPosition(gridDestination, this.SWAP_DURATION,this.onBlockMoveComplete.bind(this));
+        this._blockView.moveToPosition(gridDestination, this._gameConfig.blockSwapDuration,this.onBlockMoveComplete.bind(this));
     }
 
     cascadeBlockTo(gridDestination: Phaser.Point, isLastBlockToCascade: boolean): void {
         this._isLastBlockToCascade = isLastBlockToCascade;
         this._cascadeDestination = gridDestination;
-        this._blockView.moveToPosition(gridDestination, this.CASCADE_DURATION, this.onCascadeMovementComplete.bind(this));
+        this._blockView.moveToPosition(gridDestination, this._gameConfig.blockFallDuration, this.onCascadeMovementComplete.bind(this));
     }
 
     private onCascadeMovementComplete(): void{

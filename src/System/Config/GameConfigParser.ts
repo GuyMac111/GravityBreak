@@ -5,6 +5,8 @@ export class GameConfigParser{
     parse(configJson: any): IGameConfigModel{
         let configModel: GameConfigModel = new GameConfigModel();
         this.parseGridConfig(configJson, configModel);
+        this.parseBlocksConfig(configJson, configModel);
+        this.parseMiscConfig(configJson, configModel);
         return configModel;
     }
 
@@ -22,11 +24,18 @@ export class GameConfigParser{
     }
 
     private parseBlocksConfig(configJson: any, configModel: GameConfigModel): void {
-
+        configModel.blockSize = configJson.blocks.blockSize;
+        configModel.blockPadding = configJson.blocks.blockPadding;
+        configModel.blockSelectionDuration = configJson.blocks.selectionDuration;
+        configModel.blockFallDuration = configJson.blocks.fallDuration;
+        configModel.blockInitialSpawnFallDuration = configJson.blocks.initialSpawnFallDuration;
+        configModel.blockRepawnFallDuration = configJson.blocks.respawnFallDuration;
+        configModel.blockSwapDuration = configJson.blocks.swapDuration;
     }
 
     private parseMiscConfig(configJson: any, configModel: GameConfigModel): void {
-
+        configModel.time = configJson.time;
+        configModel.targetScore = configJson.targetScore;
     }
 
 }
