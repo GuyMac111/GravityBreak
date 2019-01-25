@@ -7,13 +7,11 @@
     <script data-main="js/main.js" src="../node_modules/requirejs/require.js"></script>
     <script>
         require(["GravityBreak"], function(GravityBreakGame){
-            function onWindowLoad(){
-                console.log("Index::: Window loaded")
+            function startEngine(){
+                console.log("Index::: starting engine")
                 new GravityBreakGame();
             }
-            window.onload = onWindowLoad;
-            // new GravityBreakGame();
-            console.log("Index::: Rest of Index occurs now");
+            startEngine();
         });
     </script>
 </head>

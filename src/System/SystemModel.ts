@@ -15,7 +15,7 @@ import { SoundController } from "../Sound/SoundController";
 //This class is essentially a BTEC program context
 //////
 export class SystemModel implements ISystemModel{
-private _blockFactory: BlockFactory;
+    private _blockFactory: BlockFactory;
     private _eventHub: EventHub;
     private _inputController: InputController;
     private _gridModel: GridStateController;

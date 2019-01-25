@@ -18,16 +18,18 @@ import { ControlPanelMediator } from "../ControlPanel/ControlPanelMediator";
 import { ScoreModel } from "../Score/ScoreModel";
 import { Timer } from "./Time/Timer";
 import { SoundController } from "../Sound/SoundController";
+import { IGameConfigModel } from "./Config/GameConfigModel";
 
 export class Startup{
     private _game: Phaser.Game;
-    ////
-    //hmmmmm: Does this need to exist?.......so far....no.
+
     private _systemModel: SystemModel;
-    ////
+
+    private _gameConfig: IGameConfigModel;
     
-    constructor(game: Phaser.Game){
+    constructor(game: Phaser.Game, gameConfig: IGameConfigModel){
         this._game = game;
+        this._gameConfig = gameConfig;
     }
     
     initialiseGame(){
@@ -86,7 +88,7 @@ export class Startup{
     }
 
     private bootstrapNodes(): void{
-        let nodeMesh: NodeMesh = new NodeMeshFactory().createNodeMesh(new Phaser.Point(9,9));
+        let nodeMesh: NodeMesh = new NodeMeshFactory().createNodeMesh(this._gameConfig.gridSize);
         this._systemModel.nodeMesh = nodeMesh;
     }
 

@@ -1,0 +1,16 @@
+{
+    "grid":{
+        "gridPositionX": 10,
+        "gridPositionY": 10,
+        "gridWidth": 6,
+        "gridHeight": 6,
+        "cascadeDirection": "Down",
+        "maskGrid": true
+    },
+    "blocks":{
+        "blockPadding": 0,
+        "blockSize": 64
+    },
+    "time": 60,
+    "targetScore":100000
+}

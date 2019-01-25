@@ -117,6 +117,7 @@ define("System/Assets", ["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     class Assets {
     }
+    Assets.Config = "config";
     Assets.SpriteDiamonds = "diamonds";
     Assets.SpritePlanet = "planet";
     Assets.SFXBreak = "break";
@@ -1807,13 +1808,156 @@ define("ControlPanel/ControlPanelMediator", ["require", "exports", "System/Media
     }
     exports.ControlPanelMediator = ControlPanelMediator;
 });
+define("Block/BlockDestroyAnimation", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var BlockDestroyAnimation;
+    (function (BlockDestroyAnimation) {
+        BlockDestroyAnimation[BlockDestroyAnimation["Warp"] = 0] = "Warp";
+        BlockDestroyAnimation[BlockDestroyAnimation["Shrink"] = 1] = "Shrink";
+        BlockDestroyAnimation[BlockDestroyAnimation["Fade"] = 2] = "Fade";
+    })(BlockDestroyAnimation = exports.BlockDestroyAnimation || (exports.BlockDestroyAnimation = {}));
+});
+define("System/Config/GameConfigModel", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GameConfigModel {
+        /**
+         * Getter gridPosition
+         * @return {Phaser.Point}
+         */
+        get gridPosition() {
+            return this._gridPosition;
+        }
+        /**
+         * Setter gridPosition
+         * @param {Phaser.Point} value
+         */
+        set gridPosition(value) {
+            this._gridPosition = value;
+        }
+        /**
+         * Getter gridSize
+         * @return {Phaser.Point}
+         */
+        get gridSize() {
+            return this._gridSize;
+        }
+        /**
+         * Setter gridSize
+         * @param {Phaser.Point} value
+         */
+        set gridSize(value) {
+            this._gridSize = value;
+        }
+        /**
+         * Getter maskGridBounds
+         * @return {boolean}
+         */
+        get maskGridBounds() {
+            return this._maskGridBounds;
+        }
+        /**
+         * Setter maskGridBounds
+         * @param {boolean} value
+         */
+        /**
+         * Getter blockPadding
+         * @return {Phaser.Point}
+         */
+        get blockPadding() {
+            return this._blockPadding;
+        }
+        /**
+         * Setter blockPadding
+         * @param {Phaser.Point} value
+         */
+        set blockPadding(value) {
+            this._blockPadding = value;
+        }
+        /**
+         * Getter blockSize
+         * @return {Phaser.Point}
+         */
+        get blockSize() {
+            return this._blockSize;
+        }
+        /**
+         * Setter blockSize
+         * @param {Phaser.Point} value
+         */
+        set blockSize(value) {
+            this._blockSize = value;
+        }
+        set maskGridBounds(value) {
+            this._maskGridBounds = value;
+        }
+        /**
+         * Getter $cascadeDirection
+         * @return {GravityState}
+         */
+        get cascadeDirection() {
+            return this._cascadeDirection;
+        }
+        /**
+         * Setter $cascadeDirection
+         * @param {GravityState} value
+         */
+        set cascadeDirection(value) {
+            this._cascadeDirection = value;
+        }
+        /**
+         * Getter $blockDestroyAnimation
+         * @return {BlockDestroyAnimation}
+         */
+        get blockDestroyAnimation() {
+            return this._blockDestroyAnimation;
+        }
+        /**
+         * Setter $blockDestroyAnimation
+         * @param {BlockDestroyAnimation} value
+         */
+        set blockDestroyAnimation(value) {
+            this._blockDestroyAnimation = value;
+        }
+        /**
+         * Getter time
+         * @return {number}
+         */
+        get time() {
+            return this._time;
+        }
+        /**
+         * Setter time
+         * @param {number} value
+         */
+        set time(value) {
+            this._time = value;
+        }
+        /**
+         * Getter targetScore
+         * @return {number}
+         */
+        get targetScore() {
+            return this._targetScore;
+        }
+        /**
+         * Setter targetScore
+         * @param {number} value
+         */
+        set targetScore(value) {
+            this._targetScore = value;
+        }
+    }
+    exports.GameConfigModel = GameConfigModel;
+});
 define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/SystemModel", "Grid/GridController", "System/Events/EventHub", "Grid/GridEvents", "Input/InputController", "Grid/GridStateController", "Grid/GridEvaluator", "Grid/NodeMeshFactory", "Gravity/GravityStateModel", "Cascade/CascadeStrategyProvider", "Background/PlanetView", "Background/PlanetMediator", "ControlPanel/ControlPanelView", "ControlPanel/ControlPanelMediator", "Score/ScoreModel", "System/Time/Timer", "Sound/SoundController"], function (require, exports, BlockFactory_1, SystemModel_1, GridController_1, EventHub_1, GridEvents_4, InputController_1, GridStateController_1, GridEvaluator_1, NodeMeshFactory_1, GravityStateModel_1, CascadeStrategyProvider_1, PlanetView_1, PlanetMediator_1, ControlPanelView_1, ControlPanelMediator_1, ScoreModel_1, Timer_2, SoundController_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Startup {
-        ////
-        constructor(game) {
+        constructor(game, gameConfig) {
             this._game = game;
+            this._gameConfig = gameConfig;
         }
         initialiseGame() {
             this._systemModel = new SystemModel_1.SystemModel();
@@ -1862,7 +2006,7 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
             this._systemModel.scoreModel = new ScoreModel_1.ScoreModel(this._systemModel.eventHub);
         }
         bootstrapNodes() {
-            let nodeMesh = new NodeMeshFactory_1.NodeMeshFactory().createNodeMesh(new Phaser.Point(9, 9));
+            let nodeMesh = new NodeMeshFactory_1.NodeMeshFactory().createNodeMesh(this._gameConfig.gridSize);
             this._systemModel.nodeMesh = nodeMesh;
         }
         bootstrapGrid() {
@@ -1892,22 +2036,61 @@ define("System/Startup", ["require", "exports", "Block/BlockFactory", "System/Sy
     }
     exports.Startup = Startup;
 });
-define("GravityBreak", ["require", "exports", "System/Startup", "System/Assets"], function (require, exports, Startup_1, Assets_4) {
+define("System/Config/GameConfigParser", ["require", "exports", "System/Config/GameConfigModel", "Gravity/GravityState"], function (require, exports, GameConfigModel_1, GravityState_4) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    class GameConfigParser {
+        parse(configJson) {
+            let configModel = new GameConfigModel_1.GameConfigModel();
+            this.parseGridConfig(configJson, configModel);
+            return configModel;
+        }
+        parseGridConfig(configJson, configModel) {
+            configModel.gridPosition = new Phaser.Point(configJson.grid.gridPositionX, configJson.grid.gridPositionY);
+            configModel.gridSize = new Phaser.Point(configJson.grid.gridWidth, configJson.grid.gridHeight);
+            let cascadeDirectionID;
+            try {
+                cascadeDirectionID = configJson.grid.cascadeDirection;
+            }
+            catch (e) {
+                throw new Error(`Config Parsing Error: Configured cascade direction value \"${configJson.grid.cascadeDirection}\" does not match any given value of the GravityState enum`);
+            }
+            configModel.cascadeDirection = GravityState_4.GravityState[cascadeDirectionID];
+        }
+        parseBlocksConfig(configJson, configModel) {
+        }
+        parseMiscConfig(configJson, configModel) {
+        }
+    }
+    exports.GameConfigParser = GameConfigParser;
+});
+define("GravityBreak", ["require", "exports", "System/Startup", "System/Assets", "System/Config/GameConfigParser"], function (require, exports, Startup_1, Assets_4, GameConfigParser_1) {
     "use strict";
     class GravityBreakGame {
         constructor() {
             this.game = new Phaser.Game(800, 600, Phaser.AUTO, 'content', { preload: this.preload, create: this.create });
         }
         preload() {
-            this.game.load.spritesheet(Assets_4.Assets.SpriteDiamonds, "assets/diamonds32x5.png", 64, 64, 5);
-            this.game.load.image(Assets_4.Assets.SpritePlanet, "assets/rock-planet.png");
-            this.game.load.audio(Assets_4.Assets.SFXBreak, "assets/break-sfx.wav");
-            this.game.load.audio(Assets_4.Assets.SFXCascade, "assets/cascading-sfx.wav");
-            this.game.load.audio(Assets_4.Assets.SFXBgm, "assets/totally-open-source-bgm.mp3");
-            this.game.stage.backgroundColor = 0x000000;
+            let loadTheRestFunc = () => {
+                console.log('config complete');
+                this.game.load.onFileComplete.remove(loadTheRestFunc, this);
+                this._configModel = new GameConfigParser_1.GameConfigParser().parse(this.game.cache.getJSON(Assets_4.Assets.Config));
+                this.game.load.spritesheet(Assets_4.Assets.SpriteDiamonds, "assets/diamonds32x5.png", 64, 64, 5);
+                this.game.load.image(Assets_4.Assets.SpritePlanet, "assets/rock-planet.png");
+                this.game.load.audio(Assets_4.Assets.SFXBreak, "assets/break-sfx.wav");
+                this.game.load.audio(Assets_4.Assets.SFXCascade, "assets/cascading-sfx.wav");
+                this.game.load.audio(Assets_4.Assets.SFXBgm, "assets/totally-open-source-bgm.mp3");
+                this.game.stage.backgroundColor = 0x000000;
+            };
+            this.game.load.onFileComplete.add(loadTheRestFunc, this);
+            this.game.load.onLoadComplete.add(() => {
+                console.log('load complete');
+            }, this);
+            this.game.load.json(Assets_4.Assets.Config, "assets/config.json");
         }
         create() {
-            let startup = new Startup_1.Startup(this.game);
+            console.log('create start');
+            let startup = new Startup_1.Startup(this.game, this._configModel);
             startup.initialiseGame();
         }
     }
