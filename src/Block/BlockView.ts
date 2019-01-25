@@ -17,7 +17,7 @@ export class BlockView extends View{
 
     initialise(startingGridCoordinates: Phaser.Point, colour: BlockColour){
         let startingCoords: Phaser.Point = this.translateGridCoordsToWorld(startingGridCoordinates);
-        this._diamondSprite = this.layerGroup.create(startingCoords.x,startingCoords.y,Assets.SpriteDiamonds,colour);
+        this._diamondSprite = this.layerGroup.create(startingCoords.x,startingCoords.y,this._gameConfig.blockSprites[colour]);
         this._diamondSprite.anchor = new Phaser.Point(0.5,0.5);
         this._diamondSprite.inputEnabled = true;
         this._diamondSprite.events.onInputDown.add(this.onBlockTouched, this);
@@ -90,8 +90,8 @@ export class BlockView extends View{
 
     private translateGridCoordsToWorld(gridCoords: Phaser.Point): Phaser.Point{
         return new Phaser.Point(
-                gridCoords.x*(this._gameConfig.blockSize+this._gameConfig.blockPadding)+this.spriteCenterOffset, 
-                gridCoords.y*(this._gameConfig.blockSize+this._gameConfig.blockPadding)+this.spriteCenterOffset
+                gridCoords.x*(this._gameConfig.blockSize+this._gameConfig.blockPadding)+this.spriteCenterOffset+this._gameConfig.gridPosition.x, 
+                gridCoords.y*(this._gameConfig.blockSize+this._gameConfig.blockPadding)+this.spriteCenterOffset+this._gameConfig.gridPosition.y
             );
     }
 }

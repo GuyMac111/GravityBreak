@@ -151,6 +151,20 @@ define("System/Config/GameConfigModel", ["require", "exports"], function (requir
     Object.defineProperty(exports, "__esModule", { value: true });
     class GameConfigModel {
         /**
+         * Getter blockSprites
+         * @return {string[]}
+         */
+        get blockSprites() {
+            return this._blockSprites;
+        }
+        /**
+         * Setter blockSprites
+         * @param {string[]} value
+         */
+        set blockSprites(value) {
+            this._blockSprites = value;
+        }
+        /**
          * Getter blockInitialSpawnFallDuration
          * @return {number}
          */
@@ -349,7 +363,7 @@ define("System/Config/GameConfigModel", ["require", "exports"], function (requir
     }
     exports.GameConfigModel = GameConfigModel;
 });
-define("Block/BlockView", ["require", "exports", "System/View", "System/Assets"], function (require, exports, View_1, Assets_1) {
+define("Block/BlockView", ["require", "exports", "System/View"], function (require, exports, View_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class BlockView extends View_1.View {
@@ -359,7 +373,7 @@ define("Block/BlockView", ["require", "exports", "System/View", "System/Assets"]
         }
         initialise(startingGridCoordinates, colour) {
             let startingCoords = this.translateGridCoordsToWorld(startingGridCoordinates);
-            this._diamondSprite = this.layerGroup.create(startingCoords.x, startingCoords.y, Assets_1.Assets.SpriteDiamonds, colour);
+            this._diamondSprite = this.layerGroup.create(startingCoords.x, startingCoords.y, this._gameConfig.blockSprites[colour]);
             this._diamondSprite.anchor = new Phaser.Point(0.5, 0.5);
             this._diamondSprite.inputEnabled = true;
             this._diamondSprite.events.onInputDown.add(this.onBlockTouched, this);
@@ -420,7 +434,7 @@ define("Block/BlockView", ["require", "exports", "System/View", "System/Assets"]
             }
         }
         translateGridCoordsToWorld(gridCoords) {
-            return new Phaser.Point(gridCoords.x * (this._gameConfig.blockSize + this._gameConfig.blockPadding) + this.spriteCenterOffset, gridCoords.y * (this._gameConfig.blockSize + this._gameConfig.blockPadding) + this.spriteCenterOffset);
+            return new Phaser.Point(gridCoords.x * (this._gameConfig.blockSize + this._gameConfig.blockPadding) + this.spriteCenterOffset + this._gameConfig.gridPosition.x, gridCoords.y * (this._gameConfig.blockSize + this._gameConfig.blockPadding) + this.spriteCenterOffset + this._gameConfig.gridPosition.y);
         }
     }
     exports.BlockView = BlockView;
@@ -571,7 +585,7 @@ define("Block/BlockMediator", ["require", "exports", "System/Mediator", "Block/B
     }
     exports.BlockMediator = BlockMediator;
 });
-define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Block/BlockView", "Block/BlockColour"], function (require, exports, BlockMediator_1, BlockView_1, BlockColour_1) {
+define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Block/BlockView"], function (require, exports, BlockMediator_1, BlockView_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class BlockFactory {
@@ -592,7 +606,7 @@ define("Block/BlockFactory", ["require", "exports", "Block/BlockMediator", "Bloc
         }
         generateRandomColour() {
             //hacky solution for randomising between enum values. WILL fail on string enums.
-            let numEnumValues = Object.keys(BlockColour_1.BlockColour).length / 2;
+            let numEnumValues = this._gameConfig.blockSprites.length;
             let randomEnumInt = Math.floor(Math.random() * numEnumValues);
             return randomEnumInt;
         }
@@ -1719,7 +1733,7 @@ define("Score/ScoreModel", ["require", "exports", "System/Events/EventHandler", 
     }
     exports.ScoreModel = ScoreModel;
 });
-define("Sound/SoundController", ["require", "exports", "System/Events/EventHandler", "Sound/SoundEvents", "System/Assets"], function (require, exports, EventHandler_8, SoundEvents_3, Assets_2) {
+define("Sound/SoundController", ["require", "exports", "System/Events/EventHandler", "Sound/SoundEvents", "System/Assets"], function (require, exports, EventHandler_8, SoundEvents_3, Assets_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class SoundController extends EventHandler_8.EventHandler {
@@ -1731,9 +1745,9 @@ define("Sound/SoundController", ["require", "exports", "System/Events/EventHandl
             this.addEventListener(SoundEvents_3.SoundEvents.PlayCascadeEvent, this.onPlayCascadeSFXEvent.bind(this));
         }
         initialise() {
-            this._explosion = this._game.add.audio(Assets_2.Assets.SFXBreak);
-            this._bgm = this._game.add.audio(Assets_2.Assets.SFXBgm, 1, true);
-            this._cascade = this._game.add.audio(Assets_2.Assets.SFXCascade, 0.7);
+            this._explosion = this._game.add.audio(Assets_1.Assets.SFXBreak);
+            this._bgm = this._game.add.audio(Assets_1.Assets.SFXBgm, 1, true);
+            this._cascade = this._game.add.audio(Assets_1.Assets.SFXCascade, 0.7);
         }
         ////
         //Obviously in a more complex game we would map these into a dictionary with keys, and pass that key as a payload through a single event
@@ -1826,7 +1840,7 @@ define("System/SystemModel", ["require", "exports"], function (require, exports)
     }
     exports.SystemModel = SystemModel;
 });
-define("Background/PlanetView", ["require", "exports", "System/View", "Gravity/GravityState", "typescript-collections", "System/Assets"], function (require, exports, View_2, GravityState_3, typescript_collections_5, Assets_3) {
+define("Background/PlanetView", ["require", "exports", "System/View", "Gravity/GravityState", "typescript-collections", "System/Assets"], function (require, exports, View_2, GravityState_3, typescript_collections_5, Assets_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class PlanetView extends View_2.View {
@@ -1847,7 +1861,7 @@ define("Background/PlanetView", ["require", "exports", "System/View", "Gravity/G
             this._gravityStatePlanetLocationMap.setValue(GravityState_3.GravityState.Left, this.PLANET_LEFT_POS);
             this._gravityStatePlanetLocationMap.setValue(GravityState_3.GravityState.Right, this.PLANET_RIGHT_POS);
             let startingPosition = this.PLANET_BOTTOM_POS;
-            this._planetSprite = this.layerGroup.create(startingPosition.x, startingPosition.y, Assets_3.Assets.SpritePlanet);
+            this._planetSprite = this.layerGroup.create(startingPosition.x, startingPosition.y, Assets_2.Assets.SpritePlanet);
             this._planetSprite.scale = new Phaser.Point(1.5, 1.5);
             this._planetSprite.anchor = new Phaser.Point(0.5, 0.5);
         }
@@ -2125,6 +2139,7 @@ define("System/Config/GameConfigParser", ["require", "exports", "System/Config/G
             configModel.blockInitialSpawnFallDuration = configJson.blocks.initialSpawnFallDuration;
             configModel.blockRepawnFallDuration = configJson.blocks.respawnFallDuration;
             configModel.blockSwapDuration = configJson.blocks.swapDuration;
+            configModel.blockSprites = configJson.blocks.blockSprites;
         }
         parseMiscConfig(configJson, configModel) {
             configModel.time = configJson.time;
@@ -2133,7 +2148,7 @@ define("System/Config/GameConfigParser", ["require", "exports", "System/Config/G
     }
     exports.GameConfigParser = GameConfigParser;
 });
-define("GravityBreak", ["require", "exports", "System/Startup", "System/Assets", "System/Config/GameConfigParser"], function (require, exports, Startup_1, Assets_4, GameConfigParser_1) {
+define("GravityBreak", ["require", "exports", "System/Startup", "System/Assets", "System/Config/GameConfigParser"], function (require, exports, Startup_1, Assets_3, GameConfigParser_1) {
     "use strict";
     class GravityBreakGame {
         constructor() {
@@ -2143,19 +2158,23 @@ define("GravityBreak", ["require", "exports", "System/Startup", "System/Assets",
             let loadTheRestFunc = () => {
                 console.log('config complete');
                 this.game.load.onFileComplete.remove(loadTheRestFunc, this);
-                this._configModel = new GameConfigParser_1.GameConfigParser().parse(this.game.cache.getJSON(Assets_4.Assets.Config));
-                this.game.load.spritesheet(Assets_4.Assets.SpriteDiamonds, "assets/diamonds32x5.png", 64, 64, 5);
-                this.game.load.image(Assets_4.Assets.SpritePlanet, "assets/rock-planet.png");
-                this.game.load.audio(Assets_4.Assets.SFXBreak, "assets/break-sfx.wav");
-                this.game.load.audio(Assets_4.Assets.SFXCascade, "assets/cascading-sfx.wav");
-                this.game.load.audio(Assets_4.Assets.SFXBgm, "assets/totally-open-source-bgm.mp3");
+                this._configModel = new GameConfigParser_1.GameConfigParser().parse(this.game.cache.getJSON(Assets_3.Assets.Config));
+                for (let i = 0; i < this._configModel.blockSprites.length; i++) {
+                    let key = this._configModel.blockSprites[i];
+                    this.game.load.image(key, `assets/${key}.png`);
+                }
+                this.game.load.spritesheet(Assets_3.Assets.SpriteDiamonds, "assets/diamonds32x5.png", 64, 64, 5);
+                this.game.load.image(Assets_3.Assets.SpritePlanet, "assets/rock-planet.png");
+                this.game.load.audio(Assets_3.Assets.SFXBreak, "assets/break-sfx.wav");
+                this.game.load.audio(Assets_3.Assets.SFXCascade, "assets/cascading-sfx.wav");
+                this.game.load.audio(Assets_3.Assets.SFXBgm, "assets/totally-open-source-bgm.mp3");
                 this.game.stage.backgroundColor = 0x000000;
             };
             this.game.load.onFileComplete.add(loadTheRestFunc, this);
             this.game.load.onLoadComplete.add(() => {
                 console.log('load complete');
             }, this);
-            this.game.load.json(Assets_4.Assets.Config, "assets/config.json");
+            this.game.load.json(Assets_3.Assets.Config, "assets/config.json");
         }
         create() {
             console.log('create start');

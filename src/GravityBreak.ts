@@ -17,6 +17,10 @@ class GravityBreakGame{
 			console.log('config complete');
 			this.game.load.onFileComplete.remove(loadTheRestFunc, this);
 			this._configModel = new GameConfigParser().parse(this.game.cache.getJSON(Assets.Config));
+			for(let i:number = 0; i<this._configModel.blockSprites.length; i++){
+				let key: string = this._configModel.blockSprites[i];
+				this.game.load.image(key,`assets/${key}.png`);
+			}
 			this.game.load.spritesheet(Assets.SpriteDiamonds, "assets/diamonds32x5.png",64,64,5);
 			this.game.load.image(Assets.SpritePlanet,"assets/rock-planet.png");
 			this.game.load.audio(Assets.SFXBreak,"assets/break-sfx.wav");
@@ -30,7 +34,7 @@ class GravityBreakGame{
 		}, this);
 		this.game.load.json(Assets.Config, "assets/config.json");
 	}
-	
+
 	create(){
 		console.log('create start');
 		let startup: Startup = new Startup(this.game, this._configModel);

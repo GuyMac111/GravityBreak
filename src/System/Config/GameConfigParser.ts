@@ -31,6 +31,7 @@ export class GameConfigParser{
         configModel.blockInitialSpawnFallDuration = configJson.blocks.initialSpawnFallDuration;
         configModel.blockRepawnFallDuration = configJson.blocks.respawnFallDuration;
         configModel.blockSwapDuration = configJson.blocks.swapDuration;
+        configModel.blockSprites = configJson.blocks.blockSprites;
     }
 
     private parseMiscConfig(configJson: any, configModel: GameConfigModel): void {

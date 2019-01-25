@@ -12,10 +12,12 @@ export interface IGameConfigModel {
     blockInitialSpawnFallDuration: number;
     blockRepawnFallDuration: number;
     blockSwapDuration: number;
+    blockSprites: string[];
     cascadeDirection: GravityState;
     blockDestroyAnimation: BlockDestroyAnimation;
     time: number;
     targetScore: number;
+
 }
 
 export class GameConfigModel {
@@ -38,7 +40,23 @@ export class GameConfigModel {
     
     private _time: number;
     private _targetScore: number;
+    private _blockSprites: string[];
 
+    /**
+     * Getter blockSprites
+     * @return {string[]}
+     */
+	public get blockSprites(): string[] {
+		return this._blockSprites;
+	}
+
+    /**
+     * Setter blockSprites
+     * @param {string[]} value
+     */
+	public set blockSprites(value: string[]) {
+		this._blockSprites = value;
+	}
 
     /**
      * Getter blockInitialSpawnFallDuration

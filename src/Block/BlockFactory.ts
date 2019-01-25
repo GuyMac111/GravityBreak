@@ -29,7 +29,7 @@ export class BlockFactory{
 
     private generateRandomColour(): BlockColour{
         //hacky solution for randomising between enum values. WILL fail on string enums.
-        let numEnumValues: number = Object.keys(BlockColour).length/2;
+        let numEnumValues: number = this._gameConfig.blockSprites.length;
         let randomEnumInt: number = Math.floor(Math.random()*numEnumValues);
         return randomEnumInt;
     }

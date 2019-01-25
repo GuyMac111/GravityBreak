@@ -8,6 +8,11 @@
         "maskGrid": true
     },
     "blocks":{
+        "blockSprites":[
+            "block1",
+            "block2",
+            "block3"
+        ],
         "blockPadding": 5,
         "blockSize": 64,
         "selectionDuration": 100,
