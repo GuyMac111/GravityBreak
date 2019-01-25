@@ -16,23 +16,24 @@ export class ControlPanelMediator extends Mediator{
         this._scoreModel.scoreUpdated = this.onScoreUpdated.bind(this);
         this._controlPanelView = injectedView;
         this._controlPanelView.initialise();
-        this._controlPanelView.rotateLeftTouched = this.onRotateLeftTouched.bind(this);
-        this._controlPanelView.rotateRightTouched = this.onRotateRightTouched.bind(this);
+        // this._controlPanelView.rotateLeftTouched = this.onRotateLeftTouched.bind(this);
+        // this._controlPanelView.rotateRightTouched = this.onRotateRightTouched.bind(this);
     }
 
-    private onRotateRightTouched(): void{
-        this.dispatchEvent(InputEvents.RotateRightTouched);
-    }
-
-    private onRotateLeftTouched(): void{
-        this.dispatchEvent(InputEvents.RotateLeftTouched);
-    }
-
+    
     private onScoreUpdated(newScore: number, additionalAmount: number): void{
         this._controlPanelView.updateScore(newScore, additionalAmount);
     }
-
+    
     private onUpdateTimerEvent(timeRemaining: number): void{
         this._controlPanelView.updateTimer(timeRemaining);
     }
+    
+    // private onRotateRightTouched(): void{
+    //     this.dispatchEvent(InputEvents.RotateRightTouched);
+    // }
+
+    // private onRotateLeftTouched(): void{
+    //     this.dispatchEvent(InputEvents.RotateLeftTouched);
+    // }
 } 

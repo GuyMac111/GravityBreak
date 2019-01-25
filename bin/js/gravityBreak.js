@@ -1958,21 +1958,21 @@ define("ControlPanel/ControlPanelView", ["require", "exports", "System/View"], f
             this._backgroundPanel.beginFill(0x767676);
             this._backgroundPanel.drawRect(0, 0, this.BACKGROUND_PANEL_DIMS.width, this.BACKGROUND_PANEL_DIMS.height);
             this._backgroundPanel.endFill();
-            this._rotateLeftButton = this.game.add.graphics(this.ROTATE_LEFT_DIMS.x, this.ROTATE_LEFT_DIMS.y, this.layerGroup);
-            this._rotateRightButton = this.game.add.graphics(this.ROTATE_RIGHT_DIMS.x, this.ROTATE_RIGHT_DIMS.y, this.layerGroup);
-            this._rotateLeftButton.beginFill(0xFFFFFF);
-            this._rotateRightButton.beginFill(0xFFFFFF);
-            this._rotateLeftButton.drawRect(0, 0, this.ROTATE_LEFT_DIMS.width, this.ROTATE_LEFT_DIMS.height);
-            this._rotateRightButton.drawRect(0, 0, this.ROTATE_RIGHT_DIMS.width, this.ROTATE_RIGHT_DIMS.height);
-            this._rotateLeftButton.endFill();
-            this._rotateRightButton.endFill();
-            this._rotateLeftButton.inputEnabled = true;
-            this._rotateRightButton.inputEnabled = true;
-            this._rotateLeftButton.events.onInputDown.add(this.onRotateLeftTouched, this);
-            this._rotateRightButton.events.onInputDown.add(this.onRotateRightTouched, this);
-            let textStyle = { font: "65px Arial", fill: "#000000" };
-            let leftArrow = this.game.add.text(this.ROTATE_LEFT_DIMS.centerX - 20, this.ROTATE_LEFT_DIMS.centerY - 30, "<", textStyle, this.layerGroup);
-            let rightArrow = this.game.add.text(this.ROTATE_RIGHT_DIMS.centerX - 20, this.ROTATE_RIGHT_DIMS.centerY - 30, ">", textStyle, this.layerGroup);
+            // this._rotateLeftButton = this.game.add.graphics(this.ROTATE_LEFT_DIMS.x, this.ROTATE_LEFT_DIMS.y, this.layerGroup);
+            // this._rotateRightButton = this.game.add.graphics(this.ROTATE_RIGHT_DIMS.x, this.ROTATE_RIGHT_DIMS.y, this.layerGroup);
+            // this._rotateLeftButton.beginFill(0xFFFFFF);
+            // this._rotateRightButton.beginFill(0xFFFFFF);
+            // this._rotateLeftButton.drawRect(0,0,this.ROTATE_LEFT_DIMS.width,this.ROTATE_LEFT_DIMS.height);
+            // this._rotateRightButton.drawRect(0,0,this.ROTATE_RIGHT_DIMS.width,this.ROTATE_RIGHT_DIMS.height);
+            // this._rotateLeftButton.endFill();
+            // this._rotateRightButton.endFill();
+            // this._rotateLeftButton.inputEnabled = true;
+            // this._rotateRightButton.inputEnabled = true;
+            // this._rotateLeftButton.events.onInputDown.add(this.onRotateLeftTouched,this);
+            // this._rotateRightButton.events.onInputDown.add(this.onRotateRightTouched,this);
+            // let textStyle = { font: "65px Arial", fill: "#000000" };
+            // let leftArrow: Phaser.Text = this.game.add.text(this.ROTATE_LEFT_DIMS.centerX-20,this.ROTATE_LEFT_DIMS.centerY-30,"<",textStyle,this.layerGroup);
+            // let rightArrow: Phaser.Text = this.game.add.text(this.ROTATE_RIGHT_DIMS.centerX-20,this.ROTATE_RIGHT_DIMS.centerY-30,">",textStyle,this.layerGroup);
         }
         updateTimer(timeRemaining) {
             this._timeRemainingtext.text = `TIME\n${timeRemaining}`;
@@ -1983,20 +1983,10 @@ define("ControlPanel/ControlPanelView", ["require", "exports", "System/View"], f
             }, this.SCORE_TWEEN_DURATION, Phaser.Easing.Quadratic.In, false);
             tween.start();
         }
-        onRotateLeftTouched() {
-            if (this.rotateLeftTouched != undefined) {
-                this.rotateLeftTouched();
-            }
-        }
-        onRotateRightTouched() {
-            if (this.rotateRightTouched != undefined) {
-                this.rotateRightTouched();
-            }
-        }
     }
     exports.ControlPanelView = ControlPanelView;
 });
-define("ControlPanel/ControlPanelMediator", ["require", "exports", "System/Mediator", "Input/InputEvents", "System/Time/TimerEvents"], function (require, exports, Mediator_3, InputEvents_3, TimerEvents_4) {
+define("ControlPanel/ControlPanelMediator", ["require", "exports", "System/Mediator", "System/Time/TimerEvents"], function (require, exports, Mediator_3, TimerEvents_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class ControlPanelMediator extends Mediator_3.Mediator {
@@ -2007,14 +1997,8 @@ define("ControlPanel/ControlPanelMediator", ["require", "exports", "System/Media
             this._scoreModel.scoreUpdated = this.onScoreUpdated.bind(this);
             this._controlPanelView = injectedView;
             this._controlPanelView.initialise();
-            this._controlPanelView.rotateLeftTouched = this.onRotateLeftTouched.bind(this);
-            this._controlPanelView.rotateRightTouched = this.onRotateRightTouched.bind(this);
-        }
-        onRotateRightTouched() {
-            this.dispatchEvent(InputEvents_3.InputEvents.RotateRightTouched);
-        }
-        onRotateLeftTouched() {
-            this.dispatchEvent(InputEvents_3.InputEvents.RotateLeftTouched);
+            // this._controlPanelView.rotateLeftTouched = this.onRotateLeftTouched.bind(this);
+            // this._controlPanelView.rotateRightTouched = this.onRotateRightTouched.bind(this);
         }
         onScoreUpdated(newScore, additionalAmount) {
             this._controlPanelView.updateScore(newScore, additionalAmount);

@@ -13,8 +13,8 @@ export class ControlPanelView extends View{
     
     private _gameConfig: IGameConfigModel;
     private _backgroundPanel: Graphics;
-    private _rotateLeftButton: Graphics;
-    private _rotateRightButton: Graphics;
+    // private _rotateLeftButton: Graphics;
+    // private _rotateRightButton: Graphics;
     private _scoreText: Text;
     private _score: number;
     private _timeRemainingtext: Text;
@@ -60,24 +60,24 @@ export class ControlPanelView extends View{
         this._backgroundPanel.drawRect(0,0,this.BACKGROUND_PANEL_DIMS.width,this.BACKGROUND_PANEL_DIMS.height);
         this._backgroundPanel.endFill();
 
-        this._rotateLeftButton = this.game.add.graphics(this.ROTATE_LEFT_DIMS.x, this.ROTATE_LEFT_DIMS.y, this.layerGroup);
-        this._rotateRightButton = this.game.add.graphics(this.ROTATE_RIGHT_DIMS.x, this.ROTATE_RIGHT_DIMS.y, this.layerGroup);
-        this._rotateLeftButton.beginFill(0xFFFFFF);
-        this._rotateRightButton.beginFill(0xFFFFFF);
-        this._rotateLeftButton.drawRect(0,0,this.ROTATE_LEFT_DIMS.width,this.ROTATE_LEFT_DIMS.height);
-        this._rotateRightButton.drawRect(0,0,this.ROTATE_RIGHT_DIMS.width,this.ROTATE_RIGHT_DIMS.height);
-        this._rotateLeftButton.endFill();
-        this._rotateRightButton.endFill();
+        // this._rotateLeftButton = this.game.add.graphics(this.ROTATE_LEFT_DIMS.x, this.ROTATE_LEFT_DIMS.y, this.layerGroup);
+        // this._rotateRightButton = this.game.add.graphics(this.ROTATE_RIGHT_DIMS.x, this.ROTATE_RIGHT_DIMS.y, this.layerGroup);
+        // this._rotateLeftButton.beginFill(0xFFFFFF);
+        // this._rotateRightButton.beginFill(0xFFFFFF);
+        // this._rotateLeftButton.drawRect(0,0,this.ROTATE_LEFT_DIMS.width,this.ROTATE_LEFT_DIMS.height);
+        // this._rotateRightButton.drawRect(0,0,this.ROTATE_RIGHT_DIMS.width,this.ROTATE_RIGHT_DIMS.height);
+        // this._rotateLeftButton.endFill();
+        // this._rotateRightButton.endFill();
 
-        this._rotateLeftButton.inputEnabled = true;
-        this._rotateRightButton.inputEnabled = true;
-        this._rotateLeftButton.events.onInputDown.add(this.onRotateLeftTouched,this);
-        this._rotateRightButton.events.onInputDown.add(this.onRotateRightTouched,this);
+        // this._rotateLeftButton.inputEnabled = true;
+        // this._rotateRightButton.inputEnabled = true;
+        // this._rotateLeftButton.events.onInputDown.add(this.onRotateLeftTouched,this);
+        // this._rotateRightButton.events.onInputDown.add(this.onRotateRightTouched,this);
 
-        let textStyle = { font: "65px Arial", fill: "#000000" };
+        // let textStyle = { font: "65px Arial", fill: "#000000" };
 
-        let leftArrow: Phaser.Text = this.game.add.text(this.ROTATE_LEFT_DIMS.centerX-20,this.ROTATE_LEFT_DIMS.centerY-30,"<",textStyle,this.layerGroup);
-        let rightArrow: Phaser.Text = this.game.add.text(this.ROTATE_RIGHT_DIMS.centerX-20,this.ROTATE_RIGHT_DIMS.centerY-30,">",textStyle,this.layerGroup);
+        // let leftArrow: Phaser.Text = this.game.add.text(this.ROTATE_LEFT_DIMS.centerX-20,this.ROTATE_LEFT_DIMS.centerY-30,"<",textStyle,this.layerGroup);
+        // let rightArrow: Phaser.Text = this.game.add.text(this.ROTATE_RIGHT_DIMS.centerX-20,this.ROTATE_RIGHT_DIMS.centerY-30,">",textStyle,this.layerGroup);
     }
 
     updateTimer(timeRemaining:number): void{
@@ -91,16 +91,16 @@ export class ControlPanelView extends View{
         tween.start();
     }
 
-    private onRotateLeftTouched(): void{
-        if(this.rotateLeftTouched!=undefined){
-            this.rotateLeftTouched();
-        }
-    }
+    // private onRotateLeftTouched(): void{
+    //     if(this.rotateLeftTouched!=undefined){
+    //         this.rotateLeftTouched();
+    //     }
+    // }
 
-    private onRotateRightTouched(): void{
-        if(this.rotateRightTouched!=undefined){
-            this.rotateRightTouched();
-        }
-    }
+    // private onRotateRightTouched(): void{
+    //     if(this.rotateRightTouched!=undefined){
+    //         this.rotateRightTouched();
+    //     }
+    // }
 
 }

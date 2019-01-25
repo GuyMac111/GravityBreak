@@ -14,7 +14,7 @@
         "fallDuration": 200,
         "initialSpawnFallDuration": 7,
         "respawnFallDuration": 50,
-        "swapDuration": 500
+        "swapDuration": 100
     },
     "time": 60,
     "targetScore":100000
